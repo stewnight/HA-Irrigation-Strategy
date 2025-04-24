@@ -39,7 +39,7 @@ Crop steering is a precision agriculture technique that strategically manages ir
 2. Copy files to your Home Assistant config directory:
    - `packages/CropSteering/` - Package files
    - `blueprints/automation/` - Blueprint files
-   - `appdaemon/apps/crop_steering/` - AppDaemon script (optional)
+   - `appdaemon/apps/crop_steering/` - AppDaemon script (Recommended for advanced features)
 
 3. Set up through blueprints:
    - Entity Configuration Blueprint - Set up sensors and switches
@@ -62,7 +62,7 @@ Crop steering is a precision agriculture technique that strategically manages ir
 - Home Assistant (2022.6.0 or newer)
 - VWC (substrate moisture) and EC (nutrient) sensors
 - Irrigation control switches/relays
-- AppDaemon add-on (recommended for advanced features)
+- AppDaemon add-on (Required for advanced features like EC Stacking)
 
 ## License
 
