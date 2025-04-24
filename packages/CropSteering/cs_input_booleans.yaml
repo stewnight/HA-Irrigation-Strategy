@@ -1,0 +1,7 @@
+# Input Boolean Helpers for Crop Steering
+# Configured via Blueprints
+
+cs_ec_stacking_enabled:
+  name: Enable EC Stacking
+  initial: off
+  icon: mdi:chart-line-stacked

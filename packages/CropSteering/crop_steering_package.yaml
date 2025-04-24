@@ -1,31 +1,19 @@
 # Home Assistant Crop Steering Package
+# Home Assistant Crop Steering Package
 # Loads all necessary configurations for the improved crop steering system.
 
-# Include all input helpers (selects, numbers, datetimes)
-input_select: !include crop_steering_variables.yaml
-input_number: !include crop_steering_variables.yaml
-input_datetime: !include crop_steering_variables.yaml
+# Include split helper files for each domain
+input_select: !include cs_input_selects.yaml
+input_number: !include cs_input_numbers.yaml
+input_boolean: !include cs_input_booleans.yaml
+input_text: !include cs_input_texts.yaml
+input_datetime: !include cs_input_datetimes.yaml
 
-# Include template sensors (calculations, status, etc.)
-# Includes sensors defined using the modern 'template:' structure
-template:
-  - !include crop_steering_improved_sensors.yaml
-  - !include crop_steering_aggregation_sensors.yaml
+# Include template sensors and switches
+# All template entities are now consolidated into cs_template_entities.yaml
+template: !include cs_template_entities.yaml
 
 # Automations are handled by the AppDaemon script (crop_steering_app.py)
-# or need to be created manually based on the helpers defined in variables.yaml
-# automation: !include crop_steering_improved_automations.yaml # Removed to avoid errors if file is missing and AppDaemon is used
-
-# Note: This package assumes the following files exist in the same directory:
-# - crop_steering_variables.yaml (containing input_select, input_number, input_datetime, input_text, input_boolean)
-# - crop_steering_improved_sensors.yaml (containing template sensors)
-# - crop_steering_aggregation_sensors.yaml (containing template sensors)
-# - crop_steering_dryback_tracking.yaml (containing template sensors for dryback)
-# - crop_steering_zone_controls.yaml (containing template sensors/switches for zones)
-
-# You might need to adjust sensor includes if they are not directly under the 'sensor:' key
-# For example, if aggregation sensors were under their own key, you'd need:
-# sensor: !include crop_steering_improved_sensors.yaml # Example if files didn't use modern template structure
-# sensor_aggregation: !include crop_steering_aggregation_sensors.yaml
-
-# Using modern template structure requires includes under the 'template:' key as list items.
+# or need to be created manually based on the helpers defined above.
+# If not using AppDaemon, you would need an automations file here (e.g., crop_steering_automations.yaml).
+# automation: !include crop_steering_automations.yaml # Example include
