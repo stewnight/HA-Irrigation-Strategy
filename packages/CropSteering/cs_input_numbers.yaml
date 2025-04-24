@@ -64,7 +64,6 @@ cs_dryback_min_percentage:
 # EC STACKING SETTINGS
 cs_ec_stacking_target_ratio:
   name: EC Stacking Target Ratio
-  description: "Target EC Ratio (Substrate/Target) during stacking (e.g., 1.5 = 50% higher than phase target)."
   min: 1.0
   max: 3.0
   step: 0.1
@@ -74,7 +73,6 @@ cs_ec_stacking_target_ratio:
 
 cs_ec_stacking_vwc_reduction:
   name: EC Stacking VWC Reduction (%)
-  description: "Percentage to reduce VWC trigger threshold during active stacking (promotes drying)."
   min: 0.0
   max: 10.0
   step: 0.5
