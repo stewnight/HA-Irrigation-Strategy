@@ -357,8 +357,8 @@ flowchart TD
         ZONE_CHECK --> ZONE_ACTIVE
     end
 
-    CHECK_VWC -- Yes --> ZONE_CHECK # Check zones if VWC is low enough
-    SELECTED_ZONES --> CHECK_MAX_EC # If zones selected, proceed
+    CHECK_VWC -- Yes --> ZONE_CHECK
+    SELECTED_ZONES --> CHECK_MAX_EC
 ```
 
 ### P3: Overnight Dry Back
@@ -400,8 +400,8 @@ flowchart TD
         ZONE_CHECK_EM --> ZONE_ACTIVE_EM
     end
 
-    CHECK_VWC -- Yes --> ZONE_CHECK_EM # Check zones if VWC is low enough
-    SELECTED_ZONES_EM --> RUN_EMERGENCY # If zones selected, proceed
+    CHECK_VWC -- Yes --> ZONE_CHECK_EM
+    SELECTED_ZONES_EM --> RUN_EMERGENCY
 ```
 
 ## Zone Control Logic
