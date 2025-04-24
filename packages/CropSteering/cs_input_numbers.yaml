@@ -230,7 +230,7 @@ cs_p2_vwc_threshold:
 cs_p2_ec_high_threshold:
   name: P2 EC High Threshold
   min: 1.0
-  max: 2.0
+  max: 10.0 # Increased max
   step: 0.05
   icon: mdi:flash
   initial: 1.2
@@ -238,7 +238,7 @@ cs_p2_ec_high_threshold:
 cs_p2_ec_low_threshold:
   name: P2 EC Low Threshold
   min: 0.5
-  max: 1.0
+  max: 10.0 # Increased max
   step: 0.05
   icon: mdi:flash
   initial: 0.8
@@ -302,7 +302,7 @@ cs_p3_emergency_shot_size_percent:
 cs_ec_target_veg_p0:
   name: EC Target Veg P0
   min: 0.5
-  max: 5.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -311,7 +311,7 @@ cs_ec_target_veg_p0:
 cs_ec_target_veg_p1:
   name: EC Target Veg P1
   min: 0.5
-  max: 5.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -320,7 +320,7 @@ cs_ec_target_veg_p1:
 cs_ec_target_veg_p2:
   name: EC Target Veg P2
   min: 0.5
-  max: 5.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -329,7 +329,7 @@ cs_ec_target_veg_p2:
 cs_ec_target_veg_p3:
   name: EC Target Veg P3
   min: 0.5
-  max: 5.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -339,7 +339,7 @@ cs_ec_target_veg_p3:
 cs_ec_target_gen_p0:
   name: EC Target Gen P0
   min: 0.5
-  max: 5.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -348,7 +348,7 @@ cs_ec_target_gen_p0:
 cs_ec_target_gen_p1:
   name: EC Target Gen P1
   min: 0.5
-  max: 5.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -357,7 +357,7 @@ cs_ec_target_gen_p1:
 cs_ec_target_gen_p2:
   name: EC Target Gen P2
   min: 0.5
-  max: 5.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -366,7 +366,7 @@ cs_ec_target_gen_p2:
 cs_ec_target_gen_p3:
   name: EC Target Gen P3
   min: 0.5
-  max: 5.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -375,7 +375,7 @@ cs_ec_target_gen_p3:
 cs_ec_target_flush:
   name: EC Target Flush
   min: 0.1
-  max: 2.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -449,7 +449,7 @@ cs_substrate_critical_vwc:
 cs_substrate_max_ec:
   name: Substrate Max EC
   min: 1.0
-  max: 10.0
+  max: 12.0 # Increased max further
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -485,7 +485,7 @@ cs_max_valid_vwc:
 cs_min_valid_ec:
   name: Minimum Valid EC
   min: 0
-  max: 2.0
+  max: 10.0 # Increased max
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
@@ -494,7 +494,7 @@ cs_min_valid_ec:
 cs_max_valid_ec:
   name: Maximum Valid EC
   min: 1.0
-  max: 10.0
+  max: 15.0 # Increased max further
   step: 0.1
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
