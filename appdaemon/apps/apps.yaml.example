@@ -1,0 +1,8 @@
+# Example AppDaemon apps.yaml configuration for Crop Steering
+# Copy this to your AppDaemon apps.yaml or include it if you're using a split config
+
+crop_steering:
+  module: crop_steering_app
+  class: CropSteering
+  # All configuration is handled through Home Assistant entities
+  # No need for additional configuration here

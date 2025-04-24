@@ -1,0 +1,6 @@
+# Example configuration.yaml entry to enable packages
+# Add this to your own configuration.yaml file
+
+homeassistant:
+  # Enable packages feature - adjust path if your packages directory is elsewhere
+  packages: !include_dir_named packages

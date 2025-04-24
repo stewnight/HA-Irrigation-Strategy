@@ -1,0 +1,321 @@
+blueprint:
+  name: "Crop Steering - Entity Configuration"
+  description: >
+    This blueprint allows you to define all sensor and switch entities needed for
+    the Crop Steering package through a user-friendly UI, instead of manually editing
+    configuration files. It will set up all required input_text helpers to store your
+    entity configurations.
+  domain: automation
+  source_url: https://github.com/JakeTheRabbit/HA-Irrigation-Strategy
+  input:
+    vwc_sensors:
+      name: VWC/Water Content Sensors
+      description: >
+        Select all sensors that measure volumetric water content (VWC) or
+        substrate moisture. These will be averaged to determine irrigation needs.
+      selector:
+        entity:
+          domain: sensor
+          multiple: true
+    
+    ec_sensors:
+      name: EC/Nutrient Sensors
+      description: >
+        Select all sensors that measure electrical conductivity (EC) for nutrient
+        levels. These will be averaged to determine EC levels and ratios.
+      selector:
+        entity:
+          domain: sensor
+          multiple: true
+    
+    pump_switch:
+      name: Irrigation Pump/Valve
+      description: >
+        Select the switch/relay entity that controls your main irrigation pump or valve.
+      selector:
+        entity:
+          domain: switch
+          multiple: false
+    
+    zone_switches:
+      name: Zone Valves (in order)
+      description: >
+        Select the switch/relay entities for your irrigation zones. The order matters!
+        The first entity controls Zone 1, second is Zone 2, and third is Zone 3.
+      selector:
+        entity:
+          domain: switch
+          multiple: true
+    
+    waste_switch:
+      name: Waste/Drain Valve (Optional)
+      description: >
+        Optional - Select a switch/relay entity that controls your waste/drain valve,
+        if your system has one.
+      selector:
+        entity:
+          domain: switch
+          multiple: false
+      default: null
+    
+    # Zone 1 Sensors
+    z1_vwc_front:
+      name: Zone 1 - Front VWC Sensor
+      description: VWC/moisture sensor for the front of Zone 1.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z1_vwc_back:
+      name: Zone 1 - Back VWC Sensor
+      description: VWC/moisture sensor for the back of Zone 1.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z1_ec_front:
+      name: Zone 1 - Front EC Sensor
+      description: EC/nutrient sensor for the front of Zone 1.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z1_ec_back:
+      name: Zone 1 - Back EC Sensor
+      description: EC/nutrient sensor for the back of Zone 1.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    # Zone 2 Sensors
+    z2_vwc_front:
+      name: Zone 2 - Front VWC Sensor
+      description: VWC/moisture sensor for the front of Zone 2.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z2_vwc_back:
+      name: Zone 2 - Back VWC Sensor
+      description: VWC/moisture sensor for the back of Zone 2.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z2_ec_front:
+      name: Zone 2 - Front EC Sensor
+      description: EC/nutrient sensor for the front of Zone 2.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z2_ec_back:
+      name: Zone 2 - Back EC Sensor
+      description: EC/nutrient sensor for the back of Zone 2.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    # Zone 3 Sensors
+    z3_vwc_front:
+      name: Zone 3 - Front VWC Sensor
+      description: VWC/moisture sensor for the front of Zone 3.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z3_vwc_back:
+      name: Zone 3 - Back VWC Sensor
+      description: VWC/moisture sensor for the back of Zone 3.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z3_ec_front:
+      name: Zone 3 - Front EC Sensor
+      description: EC/nutrient sensor for the front of Zone 3.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+    
+    z3_ec_back:
+      name: Zone 3 - Back EC Sensor
+      description: EC/nutrient sensor for the back of Zone 3.
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+      default: null
+
+mode: restart
+max_exceeded: silent
+
+variables:
+  # Convert inputs to lists of entity IDs, handling null values
+  vwc_sensors_list: "{{ trigger.variables.vwc_sensors | default([]) }}"
+  ec_sensors_list: "{{ trigger.variables.ec_sensors | default([]) }}"
+  zone_switches_list: "{{ trigger.variables.zone_switches | default([]) }}"
+  
+  # Convert to strings for entity helpers
+  vwc_sensors_str: "{{ vwc_sensors_list | join(', ') }}"
+  ec_sensors_str: "{{ ec_sensors_list | join(', ') }}"
+  zone_switches_str: "{{ zone_switches_list | join(', ') }}"
+  
+  # Helper function to handle null/undefined values for single entity selections
+  null_as_empty: "{{ { 'value': '' } }}"
+  
+  # Get single entity values or empty string if null
+  pump_switch_value: "{{ trigger.variables.pump_switch or '' }}"
+  waste_switch_value: "{{ trigger.variables.waste_switch or '' }}"
+  
+  # Zone 1 sensors
+  z1_vwc_front_value: "{{ trigger.variables.z1_vwc_front or '' }}"
+  z1_vwc_back_value: "{{ trigger.variables.z1_vwc_back or '' }}"
+  z1_ec_front_value: "{{ trigger.variables.z1_ec_front or '' }}"
+  z1_ec_back_value: "{{ trigger.variables.z1_ec_back or '' }}"
+  
+  # Zone 2 sensors
+  z2_vwc_front_value: "{{ trigger.variables.z2_vwc_front or '' }}"
+  z2_vwc_back_value: "{{ trigger.variables.z2_vwc_back or '' }}"
+  z2_ec_front_value: "{{ trigger.variables.z2_ec_front or '' }}"
+  z2_ec_back_value: "{{ trigger.variables.z2_ec_back or '' }}"
+  
+  # Zone 3 sensors
+  z3_vwc_front_value: "{{ trigger.variables.z3_vwc_front or '' }}"
+  z3_vwc_back_value: "{{ trigger.variables.z3_vwc_back or '' }}"
+  z3_ec_front_value: "{{ trigger.variables.z3_ec_front or '' }}"
+  z3_ec_back_value: "{{ trigger.variables.z3_ec_back or '' }}"
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: event
+    event_type: automation_reloaded
+  - platform: template
+    value_template: "{{ true }}" # Will trigger immediately when created/changed
+
+action:
+  # Store main sensor groups
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_vwc_sensor_entities
+      value: "{{ vwc_sensors_str }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_ec_sensor_entities
+      value: "{{ ec_sensors_str }}"
+  
+  # Store switch entities
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_pump_switch_entity
+      value: "{{ pump_switch_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_zone_switch_entities
+      value: "{{ zone_switches_str }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_waste_switch_entity
+      value: "{{ waste_switch_value }}"
+  
+  # Store Zone 1 sensors
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z1_vwc_front
+      value: "{{ z1_vwc_front_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z1_vwc_back
+      value: "{{ z1_vwc_back_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z1_ec_front
+      value: "{{ z1_ec_front_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z1_ec_back
+      value: "{{ z1_ec_back_value }}"
+  
+  # Store Zone 2 sensors
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z2_vwc_front
+      value: "{{ z2_vwc_front_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z2_vwc_back
+      value: "{{ z2_vwc_back_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z2_ec_front
+      value: "{{ z2_ec_front_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z2_ec_back
+      value: "{{ z2_ec_back_value }}"
+  
+  # Store Zone 3 sensors
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z3_vwc_front
+      value: "{{ z3_vwc_front_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z3_vwc_back
+      value: "{{ z3_vwc_back_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z3_ec_front
+      value: "{{ z3_ec_front_value }}"
+  
+  - service: input_text.set_value
+    data:
+      entity_id: input_text.cs_config_z3_ec_back
+      value: "{{ z3_ec_back_value }}"
+
+  # Notify user
+  - service: persistent_notification.create
+    data:
+      title: "Crop Steering Configuration Updated"
+      message: >
+        The Crop Steering configuration has been updated with your selected entities.
+        
+        VWC Sensors: {{ vwc_sensors_list | length }} configured
+        EC Sensors: {{ ec_sensors_list | length }} configured
+        Zone Switches: {{ zone_switches_list | length }} configured
+        
+        The changes will take effect immediately.

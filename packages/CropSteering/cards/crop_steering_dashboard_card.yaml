@@ -1,0 +1,192 @@
+type: vertical-stack
+title: Crop Steering Control Panel
+cards:
+  # Current Status Section
+  - type: entities
+    title: Current Status
+    show_header_toggle: false
+    entities:
+      - entity: input_select.cs_crop_steering_phase # Use cs_ prefix
+        name: Current Phase
+      - entity: input_select.cs_steering_mode
+        name: Growth Mode
+      - entity: sensor.cs_current_phase_description # Use cs_ prefix
+      - entity: sensor.cs_irrigation_status # Use cs_ prefix
+      - entity: sensor.cs_configured_avg_vwc # Use configured entity
+        name: Average VWC
+      - entity: sensor.cs_configured_avg_ec # Use configured entity
+        name: Average EC
+      - entity: sensor.cs_current_ec_target # Use cs_ prefix
+        name: Target EC
+      - entity: sensor.cs_ec_ratio # Use cs_ prefix
+        name: EC Ratio
+
+  # Light Schedule Section
+  - type: entities
+    title: Light Schedule
+    show_header_toggle: false
+    entities:
+      - entity: input_datetime.cs_lights_on_time # Use cs_ prefix
+        name: Lights On Time
+      - entity: input_datetime.cs_lights_off_time # Use cs_ prefix
+        name: Lights Off Time
+      - entity: sensor.cs_minutes_since_lights_on # Use cs_ prefix
+        name: Minutes Since Lights On
+      - entity: sensor.cs_minutes_until_lights_off # Use cs_ prefix
+        name: Minutes Until Lights Off
+
+  # Irrigation Controls Section
+  - type: entities
+    title: Irrigation Controls
+    show_header_toggle: false
+    entities:
+      - entity: switch.cs_configured_pump_switch # Use configured entity
+        name: Irrigation Pump
+        icon: mdi:water-pump
+      - type: button
+        name: Manual Irrigation
+        icon: mdi:water
+        tap_action:
+          action: call-service
+          service: switch.turn_on
+          service_data:
+            entity_id: switch.cs_configured_pump_switch # Use configured entity
+      - entity: input_number.cs_dripper_flow_rate
+        name: Dripper Flow Rate (L/hr)
+      - entity: input_number.cs_substrate_volume
+        name: Substrate Volume (L)
+
+  # Phase Settings
+  - type: entities
+    title: Phase Settings
+    show_header_toggle: false
+    entities:
+      # P0 Settings
+      - type: section
+        label: P0 Settings
+      - entity: input_number.cs_p0_veg_dryback_target
+        name: P0 Veg Dryback Target
+      - entity: input_number.cs_p0_gen_dryback_target
+        name: P0 Gen Dryback Target
+      - entity: input_number.cs_p0_max_wait_time
+        name: P0 Max Wait Time
+      - entity: input_number.cs_p0_min_wait_time
+        name: P0 Min Wait Time
+      
+      # P1 Settings
+      - type: section
+        label: P1 Settings
+      - entity: input_number.cs_p1_initial_shot_size_percent
+        name: P1 Initial Shot Size
+      - entity: input_number.cs_p1_shot_size_increment_percent
+        name: P1 Shot Size Increment
+      - entity: input_number.cs_p1_time_between_shots
+        name: P1 Time Between Shots
+      - entity: input_number.cs_p1_target_vwc
+        name: P1 Target VWC
+      - entity: input_number.cs_p1_max_shots
+        name: P1 Max Shots
+      - entity: input_number.cs_p1_max_shot_size_percent
+        name: P1 Max Shot Size
+      
+      # P2 Settings
+      - type: section
+        label: P2 Settings
+      - entity: input_number.cs_p2_shot_size_percent
+        name: P2 Shot Size
+      - entity: input_number.cs_p2_veg_frequency
+        name: P2 Veg Frequency
+      - entity: input_number.cs_p2_gen_frequency
+        name: P2 Gen Frequency
+      - entity: input_number.cs_p2_vwc_threshold
+        name: P2 VWC Threshold
+      
+      # P3 Settings
+      - type: section
+        label: P3 Settings
+      - entity: input_number.cs_p3_veg_last_irrigation
+        name: P3 Veg Last Irrigation
+      - entity: input_number.cs_p3_gen_last_irrigation
+        name: P3 Gen Last Irrigation
+      - entity: input_number.cs_p3_emergency_vwc_threshold
+        name: P3 Emergency VWC Threshold
+      - entity: input_number.cs_p3_emergency_shot_size_percent
+        name: P3 Emergency Shot Size
+
+  # Dryback Tracking
+  - type: entities
+    title: Dryback Tracking
+    show_header_toggle: false
+    entities:
+      - entity: sensor.dryback_in_progress
+        name: Dryback In Progress
+      - entity: sensor.dryback_current_percentage
+        name: Current Dryback %
+      - entity: sensor.dryback_current_duration
+        name: Current Duration (min)
+      - entity: sensor.dryback_last_percentage
+        name: Last Dryback %
+      - entity: sensor.dryback_last_duration
+        name: Last Duration (min)
+      - entity: sensor.dryback_avg_percentage_24h
+        name: Avg Dryback % (24h)
+      - entity: sensor.dryback_avg_duration_24h
+        name: Avg Duration (24h)
+      - entity: sensor.dryback_count_24h
+        name: Dryback Count (24h)
+
+  # Dryback Settings
+  - type: entities
+    title: Dryback Settings
+    show_header_toggle: false
+    entities:
+      - entity: input_number.cs_dryback_peak_detection_threshold
+        name: Peak Detection Threshold
+      - entity: input_number.cs_dryback_valley_detection_threshold
+        name: Valley Detection Threshold
+      - entity: input_number.cs_dryback_min_duration
+        name: Minimum Duration (min)
+      - entity: input_number.cs_dryback_min_percentage
+        name: Minimum Percentage
+
+  # EC Targets
+  - type: entities
+    title: EC Targets (mS/cm)
+    show_header_toggle: false
+    entities:
+      - entity: input_number.cs_ec_target_veg_p0
+        name: Veg P0
+      - entity: input_number.cs_ec_target_veg_p1
+        name: Veg P1
+      - entity: input_number.cs_ec_target_veg_p2
+        name: Veg P2
+      - entity: input_number.cs_ec_target_veg_p3
+        name: Veg P3
+      - entity: input_number.cs_ec_target_gen_p0
+        name: Gen P0
+      - entity: input_number.cs_ec_target_gen_p1
+        name: Gen P1
+      - entity: input_number.cs_ec_target_gen_p2
+        name: Gen P2
+      - entity: input_number.cs_ec_target_gen_p3
+        name: Gen P3
+      - entity: input_number.cs_ec_target_flush
+        name: Flush
+
+  # VWC Graph using standard Home Assistant graph
+  - type: history-graph
+    title: VWC Monitoring
+    hours_to_show: 24
+    entities:
+      - entity: sensor.cs_configured_avg_vwc # Use configured entity
+        name: Average VWC
+      - entity: sensor.zone_1_vwc
+        name: Zone 1 VWC
+      - entity: sensor.zone_2_vwc
+        name: Zone 2 VWC
+      - entity: sensor.zone_3_vwc
+        name: Zone 3 VWC
+      - entity: sensor.dryback_last_peak_vwc
+        name: Peak VWC
+      - entity: sensor.dryback_last_valley_vwc
+        name: Valley VWC
