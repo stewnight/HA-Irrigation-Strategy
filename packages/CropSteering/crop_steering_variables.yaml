@@ -1,6 +1,7 @@
 # Crop Steering Variables
-# This file contains all configurable variables for the crop steering system
-# Edit this file to match your sensor entities and preferences
+# This file defines all the input helpers used by the Crop Steering system.
+# These helpers are configured via the Entity Setup and Parameters blueprints.
+# Manual editing is generally not required unless customizing beyond the blueprints.
 
 #==============================================================================
 # ALL INPUT HELPERS COMBINED
@@ -764,5 +765,3 @@ input_datetime:
     has_time: true
     initial: "22:00:00"
     icon: mdi:clock-time-ten
-
-# Removed input_text section for entity mapping - hardcode entities where needed

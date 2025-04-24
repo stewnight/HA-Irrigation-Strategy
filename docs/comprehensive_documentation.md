@@ -315,9 +315,9 @@ flowchart TD
     P3_TIME_CHECK -- Yes --> TRANSITION_P3[Transition to P3<br>Send Notification]
 
     CHECK_VWC -- Yes --> CHECK_MAX_EC{EC > Max Safe EC?}
-    CHECK_MAX_EC -- Yes --> SKIP_HIGH_EC[Skip Irrigation<br>(High EC Safety)]
+    CHECK_MAX_EC -- Yes --> SKIP_HIGH_EC["Skip Irrigation\n(High EC Safety)"]
     SKIP_HIGH_EC --> MONITOR_VWC
-    CHECK_MAX_EC -- No --> CHECK_PUMP{Pump<br>Already On?}
+    CHECK_MAX_EC -- No --> CHECK_PUMP{"Pump\nAlready On?"}
     CHECK_PUMP -- Yes --> MONITOR_VWC
     CHECK_PUMP -- No --> RUN_SHOT[Start Irrigation]
 
@@ -343,22 +343,22 @@ flowchart TD
         NO_ADJ --> APPLY_STACKING
         APPLY_STACKING{EC Stacking Active?}
         APPLY_STACKING -- Yes --> STACK_ADJ[Apply Stacking<br>VWC Reduction]
-        APPLY_STACKING -- No --> FINAL_THRESHOLD[Final Adjusted Threshold]
-        STACK_ADJ --> FINAL_THRESHOLD
+    APPLY_STACKING -- No --> FINAL_THRESHOLD["Final Adjusted Threshold"]
+    STACK_ADJ --> FINAL_THRESHOLD
     end
 
     CALC_THRESHOLD --> CALC_ADJ
 
-    subgraph "Zone-Specific Logic"
-        ZONE_CHECK[Check Each Zone's VWC]
-        ZONE_ACTIVE{Any Active Zone<br>Below Threshold?}
-        ZONE_ACTIVE -- Yes --> SELECTED_ZONES[Update Active Zones<br>for Irrigation]
-        ZONE_ACTIVE -- No --> SKIP_IRR[Skip Irrigation]
+    subgraph "Zone-Specific Logic (Simplified for Diagram)"
+        ZONE_CHECK["Check Each Zone's VWC"]
+        ZONE_ACTIVE{"Any Active Zone\nBelow Threshold?"}
+        ZONE_ACTIVE -- Yes --> SELECTED_ZONES["Update Active Zones\nfor Irrigation"]
+        ZONE_ACTIVE -- No --> SKIP_IRR["Skip Irrigation"]
         ZONE_CHECK --> ZONE_ACTIVE
     end
 
-    CHECK_VWC -- No --> ZONE_CHECK
-    SELECTED_ZONES --> CHECK_MAX_EC
+    CHECK_VWC -- Yes --> ZONE_CHECK # Check zones if VWC is low enough
+    SELECTED_ZONES --> CHECK_MAX_EC # If zones selected, proceed
 ```
 
 ### P3: Overnight Dry Back
@@ -373,9 +373,9 @@ flowchart TD
     LIGHTS_ON_CHECK -- No --> MONITOR_VWC
     LIGHTS_ON_CHECK -- Yes --> TRANSITION_P0[Transition to P0<br>New Day Cycle]
 
-    CHECK_VWC -- Yes --> CHECK_PUMP{Pump<br>Already On?}
+    CHECK_VWC -- Yes --> CHECK_PUMP{"Pump\nAlready On?"}
     CHECK_PUMP -- Yes --> MONITOR_VWC
-    CHECK_PUMP -- No --> RUN_EMERGENCY[Run Emergency Irrigation]
+    CHECK_PUMP -- No --> RUN_EMERGENCY["Run Emergency Irrigation"]
 
     RUN_EMERGENCY --> PUMP_ON[Turn On Pump]
     PUMP_ON --> WAIT[Wait Emergency<br>Shot Duration]
@@ -392,16 +392,16 @@ flowchart TD
         CALC_START --> MODE_CHECK
     end
 
-    subgraph "Zone-Specific Logic"
-        ZONE_CHECK[Check Each Zone's VWC]
-        ZONE_ACTIVE{Any Active Zone<br>Below Emergency<br>Threshold?}
-        ZONE_ACTIVE -- Yes --> SELECTED_ZONES[Update Active Zones<br>for Emergency Irrigation]
-        ZONE_ACTIVE -- No --> SKIP_IRR[Skip Irrigation]
-        ZONE_CHECK --> ZONE_ACTIVE
+    subgraph "Zone-Specific Logic (Simplified for Diagram)"
+        ZONE_CHECK_EM["Check Each Zone's VWC"]
+        ZONE_ACTIVE_EM{"Any Active Zone\nBelow Emergency\nThreshold?"}
+        ZONE_ACTIVE_EM -- Yes --> SELECTED_ZONES_EM["Update Active Zones\nfor Emergency Irrigation"]
+        ZONE_ACTIVE_EM -- No --> SKIP_IRR_EM["Skip Irrigation"]
+        ZONE_CHECK_EM --> ZONE_ACTIVE_EM
     end
 
-    CHECK_VWC -- No --> ZONE_CHECK
-    SELECTED_ZONES --> RUN_EMERGENCY
+    CHECK_VWC -- Yes --> ZONE_CHECK_EM # Check zones if VWC is low enough
+    SELECTED_ZONES_EM --> RUN_EMERGENCY # If zones selected, proceed
 ```
 
 ## Zone Control Logic
@@ -609,18 +609,18 @@ graph TD
     PHASE_ACTIVE -- No --> EC_ADJUST
     PHASE_ACTIVE -- Yes --> RATIO_CHECK{Current EC Ratio < Stacking Target Ratio?}
     RATIO_CHECK -- No --> EC_ADJUST
-    RATIO_CHECK -- Yes --> APPLY_REDUCTION[Reduce VWC Threshold by Stacking Reduction %]
-    APPLY_REDUCTION --> SAFETY_CHECK{Final Threshold > Critical VWC?}
-    SAFETY_CHECK -- No --> USE_CRITICAL[Use Critical VWC as Threshold]
-    SAFETY_CHECK -- Yes --> USE_STACK_ADJUSTED[Use Stacking-Adjusted Threshold]
-    EC_ADJUST --> COMPARE_VWC[Compare Avg VWC to Threshold]
+    RATIO_CHECK -- Yes --> APPLY_REDUCTION["Reduce VWC Threshold\nby Stacking Reduction %"]
+    APPLY_REDUCTION --> SAFETY_CHECK{"Final Threshold >\nCritical VWC?"}
+    SAFETY_CHECK -- No --> USE_CRITICAL["Use Critical VWC\nas Threshold"]
+    SAFETY_CHECK -- Yes --> USE_STACK_ADJUSTED["Use Stacking-Adjusted\nThreshold"]
+    EC_ADJUST --> COMPARE_VWC["Compare Avg VWC\nto Threshold"]
     USE_CRITICAL --> COMPARE_VWC
     USE_STACK_ADJUSTED --> COMPARE_VWC
-    COMPARE_VWC --> DECIDE{VWC < Threshold?}
-    DECIDE -- Yes --> CHECK_MAX_EC{EC < Max Safe EC?}
-    DECIDE -- No --> WAIT[Wait]
-    CHECK_MAX_EC -- Yes --> TRIGGER_IRR[Trigger P2 Irrigation]
-    CHECK_MAX_EC -- No --> SKIP_IRR[Skip Irrigation (High EC)]
+    COMPARE_VWC --> DECIDE{"VWC < Threshold?"}
+    DECIDE -- Yes --> CHECK_MAX_EC_STACK{"EC < Max Safe EC?"}
+    DECIDE -- No --> WAIT["Wait"]
+    CHECK_MAX_EC_STACK -- Yes --> TRIGGER_IRR["Trigger P2 Irrigation"]
+    CHECK_MAX_EC_STACK -- No --> SKIP_IRR_STACK["Skip Irrigation\n(High EC)"]
 ```
 
 ## Dashboard Integration
@@ -658,55 +658,86 @@ flowchart TB
     classDef switch fill:#ff9,stroke:#333,stroke-width:2px
     classDef automation fill:#f90,stroke:#333,stroke-width:2px
 
-    %% Input entities
-    InputVWC[Raw VWC Sensors]:::input
-    InputEC[Raw EC Sensors]:::input
-    InputZoneVWC[Zone VWC Sensors]:::input
-    InputZoneEC[Zone EC Sensors]:::input
+    %% Input Entities (Physical Sensors)
+    InputVWC["Raw VWC Sensors"]:::input
+    InputEC["Raw EC Sensors"]:::input
+    InputZoneVWC["Zone VWC Sensors"]:::input
+    InputZoneEC["Zone EC Sensors"]:::input
 
-    %% Helper entities
-    PhaseSelect[input_select.cs_crop_steering_phase]:::helper
-    ModeSelect[input_select.cs_steering_mode]:::helper
-    ZonesSelect[input_select.active_irrigation_zones]:::helper
-    P1ShotCount[input_number.cs_p1_shot_count]:::helper
-    P2ShotCount[input_number.cs_p2_shot_count]:::helper
-    P3ShotCount[input_number.cs_p3_shot_count]:::helper
-    ZoneEnabledBooleans[Zone Enable Input Booleans]:::helper
-    ECStackingEnabled[input_boolean.cs_ec_stacking_enabled]:::helper
-    ECStackingParams[EC Stacking Parameters<br>(input_number, input_text)]:::helper
+    %% Helper Entities (User Configuration & State)
+    PhaseSelect["input_select.cs_crop_steering_phase"]:::helper
+    ModeSelect["input_select.cs_steering_mode"]:::helper
+    ZonesSelect["input_select.active_irrigation_zones"]:::helper
+    P1ShotCount["input_number.cs_p1_shot_count"]:::helper
+    P2ShotCount["input_number.cs_p2_shot_count"]:::helper
+    P3ShotCount["input_number.cs_p3_shot_count"]:::helper
+    ZoneEnabledBooleans["Zone Enable\nInput Booleans"]:::helper
+    ECStackingEnabled["input_boolean.cs_ec_stacking_enabled"]:::helper
+    ECStackingParams["EC Stacking Parameters\n(input_number, input_text)"]:::helper
+    ConfigHelpers["Config Helpers\n(input_text storing blueprint selections)"]:::helper
+    ParamHelpers["Parameter Helpers\n(input_numbers storing blueprint selections)"]:::helper
 
-    %% Sensor entities
-    AvgVWC[sensor.cs_configured_avg_vwc]:::sensor
-    AvgEC[sensor.cs_configured_avg_ec]:::sensor
-    MinVWC[sensor.cs_configured_min_vwc]:::sensor
-    MaxVWC[sensor.cs_configured_max_vwc]:::sensor
-    ECRatio[sensor.cs_ec_ratio]:::sensor
-    AdjustedThreshold[sensor.cs_p2_vwc_threshold_ec_adjusted]:::sensor
-    ZoneVWC[Zone VWC Sensors]:::sensor
-    ZoneEC[Zone EC Sensors]:::sensor
-    ShotDurations[Shot Duration Sensors]:::sensor
-    DrybackSensors[Dryback Status Sensors]:::sensor
+    %% Sensor Entities (Calculated/Template)
+    AvgVWC["sensor.cs_configured_avg_vwc"]:::sensor
+    AvgEC["sensor.cs_configured_avg_ec"]:::sensor
+    MinVWC["sensor.cs_configured_min_vwc"]:::sensor
+    MaxVWC["sensor.cs_configured_max_vwc"]:::sensor
+    ECRatio["sensor.cs_ec_ratio"]:::sensor
+    AdjustedThreshold["sensor.cs_p2_vwc_threshold_ec_adjusted"]:::sensor
+    ZoneVWCSensors["Zone VWC Sensors (Template)"]:::sensor
+    ZoneECSensors["Zone EC Sensors (Template)"]:::sensor
+    ShotDurations["Shot Duration Sensors"]:::sensor
+    DrybackSensors["Dryback Status Sensors"]:::sensor
 
-    %% Switch entities
-    PumpSwitch[switch.cs_configured_pump_switch]:::switch
-    ZoneValves[Zone Valve Switches]:::switch
-    WasteValve[Waste Valve Switch]:::switch
+    %% Switch Entities (Actuators)
+    PumpSwitch["switch.cs_configured_pump_switch"]:::switch
+    ZoneValves["Zone Valve Switches (Template)"]:::switch
+    WasteValve["Waste Valve Switch (Template)"]:::switch
 
-    %% Automations
-    PhaseTransition[Phase Transition Automations]:::automation
-    IrrigationControl[Irrigation Control Automations]:::automation
-    ZoneControl[Zone Control Automations]:::automation
-    DrybackDetection[Dryback Detection Logic]:::automation
+    %% Automations (Logic Controllers)
+    PhaseTransition["Phase Transition Automations"]:::automation
+    IrrigationControl["Irrigation Control Automations"]:::automation
+    ZoneControl["Zone Control Automations"]:::automation
+    DrybackDetection["Dryback Detection Logic"]:::automation
+    BlueprintEntity["Entity Setup Blueprint Automation"]:::automation
+    BlueprintParam["Parameter Setup Blueprint Automation"]:::automation
 
-    %% Input connections
-    InputVWC --> AvgVWC
-    InputVWC --> MinVWC
-    InputVWC --> MaxVWC
-    InputEC --> AvgEC
-    InputZoneVWC --> ZoneVWC
-    InputZoneEC --> ZoneEC
+    %% Connections
+    BlueprintEntity --> ConfigHelpers
+    BlueprintParam --> ParamHelpers
 
-    %% Helper connections
+    ConfigHelpers --> AvgVWC
+    ConfigHelpers --> AvgEC
+    ConfigHelpers --> MinVWC
+    ConfigHelpers --> MaxVWC
+    ConfigHelpers --> PumpSwitch
+    ConfigHelpers --> ZoneValves
+    ConfigHelpers --> WasteValve
+    ConfigHelpers --> ZoneVWCSensors
+    ConfigHelpers --> ZoneECSensors
+
+    ParamHelpers --> PhaseTransition
+    ParamHelpers --> IrrigationControl
+    ParamHelpers --> ZoneControl
+    ParamHelpers --> DrybackDetection
+    ParamHelpers --> AdjustedThreshold
+    ParamHelpers --> ShotDurations
+
+    InputVWC --> ConfigHelpers
+    InputEC --> ConfigHelpers
+    InputZoneVWC --> ConfigHelpers
+    InputZoneEC --> ConfigHelpers
+
+    AvgVWC --> PhaseTransition
+    AvgVWC --> IrrigationControl
+    AvgVWC --> DrybackDetection
+    AvgEC --> ECRatio
+    MinVWC --> IrrigationControl
+    ECRatio --> AdjustedThreshold
+    AdjustedThreshold --> IrrigationControl
+    ZoneVWCSensors --> ZoneControl
+    ShotDurations --> IrrigationControl
+
     PhaseSelect --> PhaseTransition
     PhaseSelect --> IrrigationControl
     ModeSelect --> PhaseTransition
@@ -718,18 +749,6 @@ flowchart TB
     ECStackingEnabled --> IrrigationControl
     ECStackingParams --> IrrigationControl
 
-    %% Sensor connections
-    AvgVWC --> PhaseTransition
-    AvgVWC --> IrrigationControl
-    AvgVWC --> DrybackDetection
-    AvgEC --> ECRatio
-    MinVWC --> IrrigationControl
-    ECRatio --> AdjustedThreshold
-    AdjustedThreshold --> IrrigationControl
-    ZoneVWC --> ZoneControl
-    ShotDurations --> IrrigationControl
-
-    %% Control flow
     PhaseTransition --> PhaseSelect
     IrrigationControl --> PumpSwitch
     ZoneControl --> ZoneValves
