@@ -47,7 +47,12 @@ Crop steering is a precision agriculture technique that strategically manages ir
 
 4. Add dashboard cards from the `cards/` directory
 
-For complete documentation, see the [Installation Guide](docs/installation_guide.md).
+## Documentation
+
+- [Installation Guide](docs/installation_guide.md) - Step-by-step setup instructions
+- [Comprehensive Documentation](docs/comprehensive_documentation.md) - Detailed explanation of all features
+- [System Analysis](docs/system_analysis.md) - Technical overview of system architecture
+- [P1 to P2 Transition Details](docs/p1_to_p2_transition_details.md) - Advanced information on irrigation phase transitions
 
 ## Screenshots
 
