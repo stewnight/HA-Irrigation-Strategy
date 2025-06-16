@@ -58,15 +58,16 @@ input_datetime: !include_dir_merge_named .
 # Include all template sensors and binary_sensors
 template: !include_dir_merge_list .
 
-# Include automation files (MQTT monitoring includes some automations)
-automation: !include_dir_merge_list .
-
 # ================================================================
 # AUTOMATION NOTES:
 # ================================================================
 # Primary automation logic is handled by AppDaemon (crop_steering_app.py)
-# Additional automations included from:
-# - cs_mqtt_monitoring.yaml (MQTT publishing and command handling)
+# 
+# MQTT automations are in cs_mqtt_monitoring.yaml but must be included
+# separately in configuration.yaml to avoid circular references:
+#
+# Add this to your configuration.yaml:
+# automation mqtt_crop_steering: !include packages/CropSteering/cs_mqtt_monitoring.yaml
 # 
 # If not using AppDaemon, you would need to create additional automation
 # files to replace the AppDaemon logic for:
