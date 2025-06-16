@@ -49,25 +49,31 @@
 # ================================================================
 
 # Include all input helper files for each domain
-input_select: !include_dir_merge_named .
-input_number: !include_dir_merge_named .
-input_boolean: !include_dir_merge_named .
-input_text: !include_dir_merge_named .
-input_datetime: !include_dir_merge_named .
+input_select: !include cs_input_selects.yaml
+input_number: !include cs_input_numbers.yaml
+input_boolean: !include cs_input_booleans.yaml
+input_text: !include cs_input_texts.yaml
+input_datetime: !include cs_input_datetimes.yaml
 
-# Include all template sensors and binary_sensors
-template: !include_dir_merge_list .
+# Include template sensors individually to avoid circular references
+template: 
+  - !include cs_template_entities.yaml
+  - !include cs_analytics_entities.yaml
+  - !include cs_sensor_fusion_entities.yaml
+  - !include cs_ml_analytics.yaml
+  - !include cs_mqtt_monitoring.yaml
+  - !include cs_crop_profiles.yaml
 
 # ================================================================
 # AUTOMATION NOTES:
 # ================================================================
 # Primary automation logic is handled by AppDaemon (crop_steering_app.py)
 # 
-# MQTT automations are in cs_mqtt_monitoring.yaml but must be included
+# MQTT automations are in cs_mqtt_automations.yaml but must be included
 # separately in configuration.yaml to avoid circular references:
 #
 # Add this to your configuration.yaml:
-# automation mqtt_crop_steering: !include packages/CropSteering/cs_mqtt_monitoring.yaml
+# automation mqtt_crop_steering: !include packages/CropSteering/cs_mqtt_automations.yaml
 # 
 # If not using AppDaemon, you would need to create additional automation
 # files to replace the AppDaemon logic for:
