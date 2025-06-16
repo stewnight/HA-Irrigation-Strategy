@@ -1,0 +1,153 @@
+# Input helpers for MQTT Remote Monitoring
+
+input_boolean:
+  # MQTT feature toggles
+  cs_mqtt_enabled:
+    name: "Enable MQTT Remote Monitoring"
+    initial: off
+    icon: mdi:mqtt
+
+  cs_mqtt_alerts_enabled:
+    name: "Enable MQTT Alert Publishing"
+    initial: on
+    icon: mdi:bell-alert
+
+  cs_mqtt_commands_enabled:
+    name: "Enable MQTT Remote Commands"
+    initial: off
+    icon: mdi:console
+
+  cs_mqtt_retain_messages:
+    name: "Retain MQTT Messages"
+    initial: off
+    icon: mdi:content-save
+
+input_number:
+  # MQTT configuration
+  cs_mqtt_publish_interval:
+    name: "MQTT Publish Interval"
+    min: 10
+    max: 300
+    step: 10
+    unit_of_measurement: "s"
+    initial: 60
+    icon: mdi:timer
+
+  cs_mqtt_qos_level:
+    name: "MQTT QoS Level"
+    min: 0
+    max: 2
+    step: 1
+    initial: 1
+    icon: mdi:quality-high
+
+  cs_mqtt_keepalive:
+    name: "MQTT Keep Alive"
+    min: 30
+    max: 300
+    step: 30
+    unit_of_measurement: "s"
+    initial: 60
+    icon: mdi:heart-pulse
+
+input_text:
+  # MQTT topic configuration
+  cs_mqtt_base_topic:
+    name: "MQTT Base Topic"
+    max: 100
+    initial: "homeassistant/crop_steering"
+    icon: mdi:file-tree
+
+  cs_mqtt_data_topic:
+    name: "MQTT Data Topic"
+    max: 100
+    initial: "homeassistant/crop_steering/data"
+    icon: mdi:database
+
+  cs_mqtt_alert_topic:
+    name: "MQTT Alert Topic"
+    max: 100
+    initial: "homeassistant/crop_steering/alerts"
+    icon: mdi:alert
+
+  cs_mqtt_command_topic:
+    name: "MQTT Command Topic"
+    max: 100
+    initial: "homeassistant/crop_steering/commands"
+    icon: mdi:console
+
+  cs_mqtt_response_topic:
+    name: "MQTT Response Topic"
+    max: 100
+    initial: "homeassistant/crop_steering/responses"
+    icon: mdi:reply
+
+  cs_mqtt_status_topic:
+    name: "MQTT Status Topic"
+    max: 100
+    initial: "homeassistant/crop_steering/status"
+    icon: mdi:information
+
+  # MQTT broker configuration
+  cs_mqtt_broker_host:
+    name: "MQTT Broker Host"
+    max: 100
+    initial: "localhost"
+    icon: mdi:server
+
+  cs_mqtt_broker_port:
+    name: "MQTT Broker Port"
+    max: 10
+    initial: "1883"
+    icon: mdi:ethernet
+
+  cs_mqtt_username:
+    name: "MQTT Username"
+    max: 50
+    initial: ""
+    icon: mdi:account
+
+  cs_mqtt_device_id:
+    name: "MQTT Device ID"
+    max: 50
+    initial: "crop_steering_system"
+    icon: mdi:identifier
+
+input_datetime:
+  # MQTT timing
+  cs_mqtt_last_publish_time:
+    name: "Last MQTT Publish Time"
+    has_date: true
+    has_time: true
+    icon: mdi:clock-check
+
+input_select:
+  # MQTT data formats
+  cs_mqtt_data_format:
+    name: "MQTT Data Format"
+    options:
+      - "JSON Compact"
+      - "JSON Pretty"
+      - "InfluxDB Line Protocol"
+      - "CSV"
+    initial: "JSON Compact"
+    icon: mdi:code-json
+
+  cs_mqtt_compression:
+    name: "MQTT Compression"
+    options:
+      - "None"
+      - "GZIP"
+      - "LZ4"
+    initial: "None"
+    icon: mdi:zip-box
+
+  cs_mqtt_security_level:
+    name: "MQTT Security Level"
+    options:
+      - "None"
+      - "Username/Password"
+      - "TLS"
+      - "TLS + Auth"
+    initial: "Username/Password"
+    icon: mdi:security

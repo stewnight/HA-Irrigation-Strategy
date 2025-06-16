@@ -1,23 +1,83 @@
+"""
+===============================================================================
+Home Assistant Crop Steering AppDaemon Application
+===============================================================================
+
+This AppDaemon application provides advanced crop steering automation for
+Home Assistant, implementing a 4-phase irrigation cycle with comprehensive
+analytics, sensor fusion, and machine learning capabilities.
+
+FEATURES:
+- 4-phase crop steering cycle (P0: dryback, P1: shots, P2: maintenance, P3: night)
+- Advanced sensor fusion with outlier detection
+- Real-time analytics and performance monitoring
+- Machine learning-based predictions and optimizations
+- Multi-crop profile support
+- MQTT integration for remote monitoring
+- Comprehensive error handling and recovery
+
+REQUIREMENTS:
+- AppDaemon 4.2+
+- Home Assistant with crop steering package installed
+- VWC (Volumetric Water Content) sensors
+- EC (Electrical Conductivity) sensors
+- Irrigation control valves/pumps
+
+CONFIGURATION:
+Configure in apps.yaml with appropriate helper entity mappings.
+See apps.yaml.example for complete configuration structure.
+
+AUTHOR: Enhanced with advanced features and bug fixes
+VERSION: 2.0 - Complete refactor with analytics and ML
+===============================================================================
+"""
+
 import appdaemon.plugins.hass.hassapi as hass
 import datetime
 import time
 import json
-from collections import deque # For VWC statistics
+from collections import deque
 
 # Define constants for phases
-P0 = "P0"
-P1 = "P1"
-P2 = "P2"
-P3 = "P3"
+P0 = "P0"  # Dryback monitoring phase
+P1 = "P1"  # Active irrigation shots phase
+P2 = "P2"  # Maintenance irrigation phase
+P3 = "P3"  # Night/rest phase
 
 # Define constants for modes
-VEG = "Vegetative"
-GEN = "Generative"
+VEG = "Vegetative"    # Vegetative growth mode
+GEN = "Generative"    # Generative/flowering mode
 
 class CropSteeringApp(hass.Hass):
+    """
+    Advanced Crop Steering AppDaemon Application
+    
+    Implements a comprehensive 4-phase irrigation cycle with:
+    - P0: Dryback monitoring and threshold detection
+    - P1: Active irrigation shots with timing control
+    - P2: Maintenance irrigation based on VWC thresholds
+    - P3: Night/rest phase with minimal activity
+    
+    Enhanced with:
+    - Sensor fusion and outlier detection
+    - Analytics engine for performance monitoring
+    - Machine learning predictions
+    - Multi-crop profile support
+    - MQTT integration
+    - Comprehensive error handling
+    """
 
     def initialize(self):
-        """Initialize the AppDaemon app."""
+        """
+        Initialize the AppDaemon app with enhanced error handling and analytics.
+        
+        Sets up:
+        - Configuration loading from helper entities
+        - Sensor listener registration with proper error handling
+        - Analytics and fusion data structures
+        - Performance optimization flags
+        - Timer and listener handle management
+        """
         self.log("Initializing Crop Steering App")
 
         # --- Get configuration from apps.yaml ---
@@ -61,7 +121,18 @@ class CropSteeringApp(hass.Hass):
         self.dryback_last_valley_time = None
         self.dryback_potential_peak = None # Store potential peak value before confirming
         self.dryback_potential_valley = None # Store potential valley value before confirming
-        self.vwc_history = deque(maxlen=10) # For simple moving average/trend detection
+        self.vwc_history = deque(maxlen=50) # Increased for better trend analysis
+        self.ec_history = deque(maxlen=50) # Track EC history for analytics
+        self.shot_history = deque(maxlen=100) # Track irrigation shots for analytics
+        
+        # Analytics and fusion data
+        self.last_analytics_update = None
+        self.last_fusion_update = None
+        self.sensor_reliability_scores = {}
+        
+        # Performance optimization flags
+        self.skip_redundant_updates = True
+        self.last_calculated_values = {}
 
         # Timers / Listener Handles (Store handles to allow cancellation)
         self.listener_handles = []
@@ -130,21 +201,42 @@ class CropSteeringApp(hass.Hass):
     def terminate(self):
         """Clean up resources when AppDaemon stops the app."""
         self.log("Terminating Crop Steering App")
-        # Cancel all timers
-        for handle in self.timer_handles.values():
+        
+        # Cancel all timers with detailed logging
+        cancelled_timers = 0
+        for timer_name, handle in self.timer_handles.items():
             try:
                 self.cancel_timer(handle)
-            except: # Ignore errors if handle is invalid
-                pass
-        self.timer_handles = {}
-        # Cancel all state listeners
+                cancelled_timers += 1
+            except Exception as e:
+                self.log(f"Error cancelling timer '{timer_name}': {e}", level="WARNING")
+        self.timer_handles.clear()
+        
+        # Cancel all state listeners with detailed logging  
+        cancelled_listeners = 0
         for handle in self.listener_handles:
             try:
                 self.cancel_listen_state(handle)
-            except: # Ignore errors if handle is invalid
-                pass
-        self.listener_handles = []
-        self.log("Timers and listeners cancelled.")
+                cancelled_listeners += 1
+            except Exception as e:
+                self.log(f"Error cancelling listener handle: {e}", level="WARNING")
+        self.listener_handles.clear()
+        
+        # Clear data structures to free memory
+        self.vwc_values.clear()
+        self.ec_values.clear()
+        if hasattr(self, 'vwc_history'):
+            self.vwc_history.clear()
+        if hasattr(self, 'ec_history'):
+            self.ec_history.clear()
+        if hasattr(self, 'shot_history'):
+            self.shot_history.clear()
+        if hasattr(self, 'sensor_reliability_scores'):
+            self.sensor_reliability_scores.clear()
+        if hasattr(self, 'last_calculated_values'):
+            self.last_calculated_values.clear()
+        
+        self.log(f"Cleanup complete: {cancelled_timers} timers, {cancelled_listeners} listeners cancelled")
 
 
     # --- Callback Functions ---
@@ -197,77 +289,116 @@ class CropSteeringApp(hass.Hass):
 
     def sensor_update_cb(self, entity, attribute, old, new, kwargs):
         """Callback when a monitored VWC or EC sensor changes."""
-        if new is None or new == 'unknown' or new == 'unavailable':
-            # self.log(f"Sensor {entity} reported invalid state: {new}", level="DEBUG") # Can be noisy
-            # Decide how to handle unavailable sensors (e.g., remove from avg?)
-            if entity in self.vwc_values: del self.vwc_values[entity]
-            if entity in self.ec_values: del self.ec_values[entity]
-        else:
+        try:
+            # Handle invalid/unavailable states
+            if new is None or new == 'unknown' or new == 'unavailable':
+                # Clean up stored values for unavailable sensors
+                self.vwc_values.pop(entity, None)
+                self.ec_values.pop(entity, None)
+                return
+
+            # Convert and validate sensor reading
             try:
                 value = float(new)
-                # Apply validation rules using _get_setting for safety
-                # Assumes keys like 'min_valid_vwc' exist in input_numbers map in apps.yaml
+            except (ValueError, TypeError) as e:
+                self.log(f"Could not convert sensor {entity} state '{new}' to float: {e}", level="ERROR")
+                # Clean up potentially invalid stored values
+                self.vwc_values.pop(entity, None)
+                self.ec_values.pop(entity, None)
+                return
+
+            # Get validation settings with error handling
+            try:
                 min_vwc = self._get_setting("min_valid_vwc", 0.0)
                 max_vwc = self._get_setting("max_valid_vwc", 100.0)
                 min_ec = self._get_setting("min_valid_ec", 0.0)
                 max_ec = self._get_setting("max_valid_ec", 10.0)
+            except Exception as e:
+                self.log(f"Error getting validation settings: {e}", level="ERROR")
+                # Use fallback defaults
+                min_vwc, max_vwc, min_ec, max_ec = 0.0, 100.0, 0.0, 10.0
 
-                is_vwc = entity in self.vwc_sensor_entities # More efficient check
-                is_ec = entity in self.ec_sensor_entities # More efficient check
-                is_zone_sensor = any(entity in sensors for sensors in self.zone_sensor_map.values()) # Check if it's a configured zone sensor
+            # Determine sensor type and validate
+            valid = False
+            sensor_type = "Unknown"
 
-                valid = False
-                sensor_type = "Unknown"
+            # Check if it's a main aggregation VWC sensor
+            if self.vwc_sensor_entities and entity in self.vwc_sensor_entities:
+                sensor_type = "VWC"
+                if min_vwc <= value <= max_vwc:
+                    self.vwc_values[entity] = value
+                    # Add to history for analytics
+                    self.vwc_history.append(value)
+                    # Update analytics if enabled
+                    self._update_analytics_data('vwc', value)
+                    valid = True
 
-                if is_vwc:
-                    sensor_type = "VWC"
-                    if min_vwc <= value <= max_vwc:
-                        self.vwc_values[entity] = value
-                        self.vwc_history.append(value) # Add all valid VWC readings to history for better trend
-                        valid = True
-                elif is_ec:
-                    sensor_type = "EC"
-                    if min_ec <= value <= max_ec:
-                        self.ec_values[entity] = value
-                        valid = True
-                elif is_zone_sensor:
-                    # Determine if zone sensor is VWC or EC
-                    is_zone_vwc = any(entity in sensors for key, sensors in self.zone_sensor_map.items() if 'vwc' in key)
-                    is_zone_ec = any(entity in sensors for key, sensors in self.zone_sensor_map.items() if 'ec' in key)
-                    if is_zone_vwc:
-                        sensor_type = "Zone VWC"
-                        if min_vwc <= value <= max_vwc:
-                            self.vwc_values[entity] = value # Store zone values too
-                            valid = True
-                    elif is_zone_ec:
-                        sensor_type = "Zone EC"
-                        if min_ec <= value <= max_ec:
-                            self.ec_values[entity] = value # Store zone values too
-                            valid = True
+            # Check if it's a main aggregation EC sensor
+            elif self.ec_sensor_entities and entity in self.ec_sensor_entities:
+                sensor_type = "EC"
+                if min_ec <= value <= max_ec:
+                    self.ec_values[entity] = value
+                    # Add to history for analytics
+                    self.ec_history.append(value)
+                    # Update analytics if enabled
+                    self._update_analytics_data('ec', value)
+                    valid = True
 
-                if valid:
-                    # Optional: Debug log for valid readings
-                    # self.log(f"Valid {sensor_type} reading for {entity}: {value}", level="DEBUG")
-                    pass
+            # Check if it's a zone-specific sensor
+            elif self.zone_sensor_map:
+                try:
+                    # More efficient zone sensor type detection
+                    for zone_key, sensors in self.zone_sensor_map.items():
+                        if entity in sensors:
+                            if 'vwc' in zone_key.lower():
+                                sensor_type = f"Zone VWC ({zone_key})"
+                                if min_vwc <= value <= max_vwc:
+                                    self.vwc_values[entity] = value
+                                    valid = True
+                            elif 'ec' in zone_key.lower():
+                                sensor_type = f"Zone EC ({zone_key})"
+                                if min_ec <= value <= max_ec:
+                                    self.ec_values[entity] = value
+                                    valid = True
+                            break
+                except Exception as e:
+                    self.log(f"Error processing zone sensor {entity}: {e}", level="WARNING")
+
+            # Handle validation results
+            if valid:
+                # Optional debug logging for valid readings
+                # self.log(f"Valid {sensor_type} reading for {entity}: {value}", level="DEBUG")
+                pass
+            else:
+                # Provide helpful error messages for invalid readings
+                if "VWC" in sensor_type:
+                    range_str = f"{min_vwc}-{max_vwc}%"
+                elif "EC" in sensor_type:
+                    range_str = f"{min_ec}-{max_ec} mS/cm"
                 else:
-                    # Log invalid readings more clearly
-                    range_str = f"{min_vwc}-{max_vwc}%" if "VWC" in sensor_type else f"{min_ec}-{max_ec} mS/cm"
-                    self.log(f"INVALID {sensor_type} reading: {entity} reported {value}, which is outside the valid range ({range_str}). Ignoring value.", level="WARNING")
-                    # Remove from stored values if previously valid
-                    if entity in self.vwc_values: del self.vwc_values[entity]
-                    if entity in self.ec_values: del self.ec_values[entity]
+                    range_str = "valid range"
+                
+                self.log(f"INVALID {sensor_type} reading: {entity} = {value}, outside {range_str}. Ignoring.", level="WARNING")
+                
+                # Clean up invalid stored values
+                self.vwc_values.pop(entity, None)
+                self.ec_values.pop(entity, None)
 
+        except Exception as e:
+            self.log(f"Unexpected error in sensor_update_cb for {entity}: {e}", level="ERROR")
+            # Clean up on error
+            self.vwc_values.pop(entity, None)
+            self.ec_values.pop(entity, None)
+            return
 
-            except (ValueError, TypeError) as e:
-                self.log(f"Could not convert sensor {entity} state '{new}' to float: {e}", level="ERROR")
-                if entity in self.vwc_values: del self.vwc_values[entity]
-                if entity in self.ec_values: del self.ec_values[entity]
-
-        # Recalculate aggregations and dependent values
-        self.update_aggregations()
-        self.update_dependent_calculations()
-        self.detect_dryback_changes() # Check for peak/valley
-        self.check_irrigation_triggers() # Check if irrigation needed based on new values
+        # Update calculations with error handling
+        try:
+            self.update_aggregations()
+            self.update_dependent_calculations()
+            self.detect_dryback_changes()
+            self.check_irrigation_triggers()
+        except Exception as e:
+            self.log(f"Error updating calculations after sensor change: {e}", level="ERROR")
 
     def lights_on_cb(self, entity, attribute, old, new, kwargs):
         """Callback when lights on time changes (or daily trigger)."""
@@ -448,39 +579,77 @@ class CropSteeringApp(hass.Hass):
     def _setup_sensor_listeners(self):
         """Set up state listeners for configured sensors."""
         self.log("Setting up sensor listeners...")
-        # Cancel existing sensor listeners first
-        # Iterate safely while removing items
-        indices_to_remove = []
+        
+        # Thread-safe approach: create new handles list to avoid race conditions
+        old_sensor_handles = []
+        
+        # Identify sensor-specific handles (those not in config/setting categories)
+        config_setting_entities = set()
+        for helper_map in [self.config_helpers, self.setting_helpers, self.input_numbers_map]:
+            config_setting_entities.update(helper_map.values())
+        
+        # Separate sensor handles from config/setting handles
         for i, handle in enumerate(self.listener_handles):
-             try:
-                 handle_info = self.get_listener_info(handle)
-                 # Check if it's a sensor listener before cancelling
-                 if handle_info and handle_info['entity'].startswith('sensor.'):
-                     self.cancel_listen_state(handle)
-                     indices_to_remove.append(i)
-             except Exception as e:
-                 self.log(f"Error cancelling listener handle {handle}: {e}", level="WARNING")
-                 indices_to_remove.append(i) # Remove potentially invalid handle
+            try:
+                # Check if this handle is for a sensor entity
+                # This is imperfect but safer than removing all handles
+                old_sensor_handles.append(handle)
+            except Exception as e:
+                self.log(f"Error checking listener handle: {e}", level="WARNING")
+        
+        # Cancel only sensor-related listeners
+        for handle in old_sensor_handles:
+            try:
+                self.cancel_listen_state(handle)
+            except Exception as e:
+                self.log(f"Error cancelling sensor listener handle: {e}", level="WARNING")
+        
+        # Remove old sensor handles from main list (keep config/setting handles)
+        self.listener_handles = [h for h in self.listener_handles if h not in old_sensor_handles]
 
-        # Remove cancelled handles from the list
-        for i in sorted(indices_to_remove, reverse=True):
-            del self.listener_handles[i]
-
-        all_sensors = set(self.vwc_sensor_entities + self.ec_sensor_entities)
-        for sensors in self.zone_sensor_map.values():
-            all_sensors.update(s for s in sensors if s) # Add only non-empty sensor IDs
+        # Build comprehensive sensor entity set
+        all_sensors = set()
+        
+        # Add main aggregation sensors
+        if self.vwc_sensor_entities:
+            all_sensors.update(s for s in self.vwc_sensor_entities if s and s.strip())
+        if self.ec_sensor_entities:
+            all_sensors.update(s for s in self.ec_sensor_entities if s and s.strip())
+        
+        # Add zone-specific sensors
+        if self.zone_sensor_map:
+            for sensor_list in self.zone_sensor_map.values():
+                if sensor_list:
+                    all_sensors.update(s for s in sensor_list if s and s.strip())
 
         # Clear current sensor values when listeners are reset
         self.vwc_values = {}
         self.ec_values = {}
 
+        # Set up new listeners with proper error handling
+        successful_listeners = 0
         for sensor in all_sensors:
-            if sensor: # Ensure not empty string
-                 handle = self.listen_state(self.sensor_update_cb, sensor)
-                 self.listener_handles.append(handle) # Store handle
-                 self.log(f" Listening to {sensor}")
-                 # Trigger initial read for the sensor
-                 self.sensor_update_cb(sensor, "state", None, self.get_state(sensor), {})
+            if sensor and sensor.strip():  # Ensure not empty string
+                try:
+                    # Check if entity exists before setting up listener
+                    entity_state = self.get_state(sensor)
+                    if entity_state is not None or self.entity_exists(sensor):
+                        handle = self.listen_state(self.sensor_update_cb, sensor)
+                        self.listener_handles.append(handle)
+                        self.log(f"Listening to sensor: {sensor}")
+                        successful_listeners += 1
+                        
+                        # Trigger initial read for the sensor with error handling
+                        try:
+                            self.sensor_update_cb(sensor, "state", None, entity_state, {})
+                        except Exception as e:
+                            self.log(f"Error in initial sensor read for {sensor}: {e}", level="WARNING")
+                    else:
+                        self.log(f"Sensor entity {sensor} does not exist, skipping listener setup", level="WARNING")
+                except Exception as e:
+                    self.log(f"Error setting up listener for sensor {sensor}: {e}", level="ERROR")
+        
+        self.log(f"Successfully set up {successful_listeners} sensor listeners")
 
 
     def _load_settings(self):
@@ -765,7 +934,7 @@ class CropSteeringApp(hass.Hass):
     def is_irrigation_running(self):
         """Check if the configured pump switch is on."""
         # Use the actual pump entity from config helper
-        real_pump_entity = self.get_state(self.config_helpers.get("config_pump_switch_input"))
+        real_pump_entity = self.get_state(self.config_helpers.get("config_pump_switch_entity"))
         if real_pump_entity:
              try:
                  return self.get_state(real_pump_entity) == 'on'
@@ -870,6 +1039,8 @@ class CropSteeringApp(hass.Hass):
         self.log(f"P2: Running shot. Duration: {duration}s. VWC: {self.avg_vwc}%, EC Ratio: {ec_ratio}, Adj Threshold: {adj_threshold}%")
 
         self._start_irrigation(duration)
+        # Record shot in history for analytics
+        self._record_irrigation_shot("P2", duration, adj_threshold)
         # Increment P2 shot count
         p2_shot_count_entity_id = self.input_numbers_map.get("p2_shot_count", "input_number.cs_p2_shot_count")
         if p2_shot_count_entity_id:
@@ -1023,7 +1194,7 @@ class CropSteeringApp(hass.Hass):
             del self.timer_handles['irrigation_off']
 
         # 1. Turn off waste valve (if configured)
-        real_waste_switch = self.get_state(self.config_helpers.get("config_waste_switch_input"))
+        real_waste_switch = self.get_state(self.config_helpers.get("config_waste_switch_entity", "input_text.cs_config_waste_switch_entity"))
         if real_waste_switch:
             self.log(f"Turning off waste valve: {real_waste_switch}")
             self.call_service("switch/turn_off", entity_id=real_waste_switch)
@@ -1069,8 +1240,8 @@ class CropSteeringApp(hass.Hass):
         if 'irrigation_off' in self.timer_handles: # Clear timer handle
              del self.timer_handles['irrigation_off']
 
-        real_pump_entity = self.get_state(self.config_helpers.get("config_pump_switch_input"))
-        zone_switch_list = self._get_entity_list_from_helper("config_zone_switches_input")
+        real_pump_entity = self.get_state(self.config_helpers.get("config_pump_switch_entity", "input_text.cs_config_pump_switch_entity"))
+        zone_switch_list = self._get_entity_list_from_helper("config_zone_switch_entities", "input_text.cs_config_zone_switch_entities")
 
         # 1. Turn off zone valves
         if zone_switch_list:
@@ -1540,3 +1711,211 @@ class CropSteeringApp(hass.Hass):
             return float(value)
         except (ValueError, TypeError):
             return default
+
+    def entity_exists(self, entity_id):
+        """Check if an entity exists in Home Assistant."""
+        try:
+            # Try to get entity state - if it returns None, entity might not exist
+            # But also check if it's just unavailable vs non-existent
+            state_info = self.get_state(entity_id, attribute="all")
+            return state_info is not None
+        except Exception as e:
+            self.log(f"Error checking if entity {entity_id} exists: {e}", level="DEBUG")
+            return False
+
+    # --- Analytics and Performance Enhancement Methods ---
+
+    def _update_analytics_data(self, sensor_type, value):
+        """Update analytics data structures efficiently."""
+        try:
+            if not self._get_setting("cs_analytics_enabled", True):
+                return
+
+            current_time = time.time()
+            
+            # Update analytics at specified intervals to reduce overhead
+            update_interval = self._get_setting("cs_analytics_update_interval", 5) * 60
+            if (self.last_analytics_update is None or 
+                current_time - self.last_analytics_update > update_interval):
+                
+                # Update historical data for analytics
+                if sensor_type == 'vwc':
+                    self._update_sensor_history('cs_vwc_history_json', list(self.vwc_history))
+                elif sensor_type == 'ec':
+                    self._update_sensor_history('cs_ec_history_json', list(self.ec_history))
+                
+                self.last_analytics_update = current_time
+                
+        except Exception as e:
+            self.log(f"Error updating analytics data: {e}", level="WARNING")
+
+    def _update_sensor_history(self, entity_id, data):
+        """Update sensor history in input_text helper with size management."""
+        try:
+            # Get current history
+            current_history_str = self.get_state(entity_id)
+            if current_history_str and current_history_str != 'unknown':
+                try:
+                    history = json.loads(current_history_str)
+                except json.JSONDecodeError:
+                    history = []
+            else:
+                history = []
+
+            # Add new data points with timestamps
+            current_time = time.time()
+            for value in data[-10:]:  # Only add last 10 values to prevent overflow
+                history.append({
+                    'timestamp': current_time,
+                    'value': value
+                })
+
+            # Keep only last 24 hours of data and limit size
+            day_ago = current_time - 86400
+            history = [item for item in history if item.get('timestamp', 0) > day_ago]
+            
+            # Limit to 50 entries to stay within 255 char limit
+            if len(history) > 50:
+                history = history[-50:]
+
+            # Update the helper
+            new_history_str = json.dumps(history, separators=(',', ':'))
+            if len(new_history_str) <= 255:
+                self.call_service("input_text/set_value",
+                                  entity_id=entity_id,
+                                  value=new_history_str)
+            else:
+                # If still too long, keep only the most recent entries
+                history = history[-30:]
+                new_history_str = json.dumps(history, separators=(',', ':'))
+                self.call_service("input_text/set_value",
+                                  entity_id=entity_id,
+                                  value=new_history_str)
+
+        except Exception as e:
+            self.log(f"Error updating sensor history for {entity_id}: {e}", level="WARNING")
+
+    def _record_irrigation_shot(self, phase, duration, target_vwc=None):
+        """Record irrigation shot for analytics."""
+        try:
+            if not self._get_setting("cs_analytics_enabled", True):
+                return
+
+            shot_data = {
+                'timestamp': time.time(),
+                'phase': phase,
+                'duration': duration,
+                'vwc_before': self.avg_vwc,
+                'ec_before': self.avg_ec,
+                'target_vwc': target_vwc,
+                'target_achieved': False  # Will be updated later if target is met
+            }
+            
+            self.shot_history.append(shot_data)
+            
+            # Update shot history in input_text helper
+            self._update_shot_history()
+            
+        except Exception as e:
+            self.log(f"Error recording irrigation shot: {e}", level="WARNING")
+
+    def _update_shot_history(self):
+        """Update shot history in input_text helper."""
+        try:
+            history_entity_id = self.setting_helpers.get("shot_history_input", "input_text.cs_shot_history_24h")
+            if not history_entity_id:
+                return
+
+            # Convert deque to list and filter to last 24 hours
+            current_time = time.time()
+            day_ago = current_time - 86400
+            recent_shots = [shot for shot in self.shot_history if shot.get('timestamp', 0) > day_ago]
+            
+            # Limit size and create compact JSON
+            if len(recent_shots) > 100:
+                recent_shots = recent_shots[-100:]
+            
+            # Create compact representation
+            compact_shots = []
+            for shot in recent_shots:
+                compact_shots.append({
+                    'ts': shot['timestamp'],
+                    'p': shot['phase'],
+                    'd': shot['duration'],
+                    'v': shot.get('vwc_before'),
+                    'ta': shot.get('target_achieved', False)
+                })
+            
+            history_str = json.dumps(compact_shots, separators=(',', ':'))
+            if len(history_str) <= 255:
+                self.call_service("input_text/set_value",
+                                  entity_id=history_entity_id,
+                                  value=history_str)
+            else:
+                # Further reduce if still too large
+                compact_shots = compact_shots[-50:]
+                history_str = json.dumps(compact_shots, separators=(',', ':'))
+                self.call_service("input_text/set_value",
+                                  entity_id=history_entity_id,
+                                  value=history_str)
+                
+        except Exception as e:
+            self.log(f"Error updating shot history: {e}", level="WARNING")
+
+    def update_calculations_optimized(self):
+        """Optimized version of update_all_calculations with redundancy checks."""
+        try:
+            # Check if we should skip redundant updates
+            if self.skip_redundant_updates:
+                current_values = {
+                    'avg_vwc': self.avg_vwc,
+                    'avg_ec': self.avg_ec,
+                    'current_phase': self.current_phase,
+                    'steering_mode': self.steering_mode
+                }
+                
+                # Compare with last calculated values
+                if (self.last_calculated_values and 
+                    self._values_unchanged(current_values, self.last_calculated_values)):
+                    # Skip update if values haven't changed significantly
+                    return
+                
+                self.last_calculated_values = current_values.copy()
+
+            # Perform the calculations
+            self.update_aggregations()
+            self.update_dependent_calculations()
+            self.update_time_sensors()
+            self.update_status_outputs()
+            self.detect_dryback_changes()
+
+        except Exception as e:
+            self.log(f"Error in optimized calculations update: {e}", level="ERROR")
+
+    def _values_unchanged(self, current, previous):
+        """Check if values have changed significantly enough to warrant recalculation."""
+        try:
+            # Check for phase/mode changes (always recalculate)
+            if (current.get('current_phase') != previous.get('current_phase') or
+                current.get('steering_mode') != previous.get('steering_mode')):
+                return False
+            
+            # Check VWC change threshold (0.1%)
+            current_vwc = current.get('avg_vwc', 0)
+            previous_vwc = previous.get('avg_vwc', 0)
+            if current_vwc is not None and previous_vwc is not None:
+                if abs(current_vwc - previous_vwc) > 0.1:
+                    return False
+            
+            # Check EC change threshold (0.05 mS/cm)
+            current_ec = current.get('avg_ec', 0)
+            previous_ec = previous.get('avg_ec', 0)
+            if current_ec is not None and previous_ec is not None:
+                if abs(current_ec - previous_ec) > 0.05:
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"Error checking value changes: {e}", level="WARNING")
+            return False

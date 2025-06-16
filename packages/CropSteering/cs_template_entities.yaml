@@ -387,8 +387,8 @@
 #==============================================================================
 - sensor:
     - name: "dryback_in_progress"
-      friendly_name: "Dryback In Progress"
-      value_template: >
+      unique_id: cs_dryback_in_progress
+      state: >
         {% set last_peak = states('sensor.dryback_last_peak_time') %}
         {% set last_valley = states('sensor.dryback_last_valley_time') %}
         {% if last_peak != 'unknown' and last_peak != '' %}
@@ -408,7 +408,7 @@
         {% else %}
           false
         {% endif %}
-      icon_template: >
+      icon: >
         {% if is_state('sensor.dryback_in_progress', 'true') %}
           mdi:trending-down
         {% else %}
@@ -416,8 +416,8 @@
         {% endif %}
 
     - name: "dryback_current_percentage"
-      friendly_name: "Current Dryback Percentage"
-      value_template: >
+      unique_id: cs_dryback_current_percentage
+      state: >
         {% if is_state('sensor.dryback_in_progress', 'true') %}
           {% set peak_vwc = states('sensor.dryback_last_peak_vwc') | float(0) %}
           {% set current_vwc = states('sensor.cs_configured_avg_vwc') | float(0) %}
@@ -431,11 +431,12 @@
           0
         {% endif %}
       unit_of_measurement: "%"
-      icon_template: "mdi:water-percent"
+      state_class: measurement
+      icon: "mdi:water-percent"
 
     - name: "dryback_current_duration"
-      friendly_name: "Current Dryback Duration"
-      value_template: >
+      unique_id: cs_dryback_current_duration
+      state: >
         {% if is_state('sensor.dryback_in_progress', 'true') %}
           {% set peak_time = states('sensor.dryback_last_peak_time') %}
           {% if peak_time != 'unknown' and peak_time != '' and peak_time is string and peak_time|length > 0 %}
@@ -452,7 +453,8 @@
           0
         {% endif %}
       unit_of_measurement: "min"
-      icon_template: "mdi:timer"
+      state_class: measurement
+      icon: "mdi:timer"
 
     - name: "dryback_potential_peak"
       friendly_name: "Potential VWC Peak"
@@ -654,33 +656,42 @@
         {% endif %}
       device_class: running
       availability: >
-        {{ states('input_text.cs_config_pump_switch_entity') | length > 0 and
-           states('input_text.cs_config_zone_switch_entities') | length > 0 }}
+        {{ states('input_text.cs_config_pump_switch_entity') not in ['unknown', 'unavailable', ''] and
+           states('input_text.cs_config_zone_switch_entities') not in ['unknown', 'unavailable', ''] }}
 
 - sensor:
     - name: "active_zones_count"
-      friendly_name: "Active Zones Count"
-      value_template: >
+      unique_id: cs_active_zones_count
+      state: >
         {% set count = 0 %}
-        {% if is_state('input_boolean.zone_1_enabled', 'on') %}
+        {% if is_state('input_boolean.cs_zone_1_enabled', 'on') %}
           {% set count = count + 1 %}
         {% endif %}
-        {% if is_state('input_boolean.zone_2_enabled', 'on') %}
+        {% if is_state('input_boolean.cs_zone_2_enabled', 'on') %}
           {% set count = count + 1 %}
         {% endif %}
-        {% if is_state('input_boolean.zone_3_enabled', 'on') %}
+        {% if is_state('input_boolean.cs_zone_3_enabled', 'on') %}
           {% set count = count + 1 %}
         {% endif %}
         {{ count }}
-      icon_template: "mdi:counter"
+      state_class: measurement
+      icon: "mdi:counter"
 
     - name: "zone_1_vwc"
-      friendly_name: "Zone 1 VWC"
-      value_template: >
+      unique_id: cs_zone_1_vwc
+      state: >
         {% set front_entity = states('input_text.cs_config_z1_vwc_front') %}
         {% set back_entity = states('input_text.cs_config_z1_vwc_back') %}
-        {% set front = states(front_entity) | float(0) if front_entity else 0 %}
-        {% set back = states(back_entity) | float(0) if back_entity else 0 %}
+        {% if front_entity and front_entity != 'unknown' and front_entity != '' %}
+          {% set front = states(front_entity) | float(0) %}
+        {% else %}
+          {% set front = 0 %}
+        {% endif %}
+        {% if back_entity and back_entity != 'unknown' and back_entity != '' %}
+          {% set back = states(back_entity) | float(0) %}
+        {% else %}
+          {% set back = 0 %}
+        {% endif %}
         {% if front > 0 and back > 0 %}
           {{ ((front + back) / 2) | round(1) }}
         {% elif front > 0 %}
@@ -691,7 +702,8 @@
           unknown
         {% endif %}
       unit_of_measurement: "%"
-      icon_template: "mdi:water-percent"
+      state_class: measurement
+      icon: "mdi:water-percent"
       availability: >
         {{ states('input_text.cs_config_z1_vwc_front') | length > 0 or
            states('input_text.cs_config_z1_vwc_back') | length > 0 }}

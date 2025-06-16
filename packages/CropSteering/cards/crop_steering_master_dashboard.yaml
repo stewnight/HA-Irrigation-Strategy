@@ -1,17 +1,15 @@
 # Home Assistant Lovelace Dashboard for Crop Steering Package
-# Refactored for multi-column layout using custom:layout-card
+# Balanced column layout using custom:layout-card
 
-# Requires custom:layout-card from HACS
 type: custom:layout-card
 layout_type: grid
 layout:
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)) # Responsive columns, aiming for ~4 wide on larger screens
-  grid-gap: 16px 8px # Row gap, Column gap
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr))
+  grid-gap: 16px 8px
 cards:
-
-  # Column 1: Status & Core Controls
+  # Column 1: Status, Mode & Light Settings
   - view_layout:
-      grid-column: 1 / 2 # Span first column
+      grid-column: 1 / 2
     type: vertical-stack
     cards:
       - type: entities
@@ -36,10 +34,9 @@ cards:
               action: call-service
               service: automation.trigger
               service_data:
-                entity_id: automation.crop_steering_p2_ec_adjusted_irrigation_on # Ensure this automation ID exists if using YAML automations
+                entity_id: automation.crop_steering_p2_ec_adjusted_irrigation_on
                 skip_condition: true
-              # Note: If relying solely on AppDaemon, this button might need a different action (e.g., calling a script or AppDaemon service)
-
+      
       - type: entities
         title: Key Sensor Readings
         show_header_toggle: false
@@ -56,90 +53,9 @@ cards:
             name: Time Since Lights On
           - entity: sensor.cs_minutes_until_lights_off
             name: Time Until Lights Off
-
-  # Column 2: Zones & Dryback
-  - view_layout:
-      grid-column: 2 / 3 # Span second column
-    type: vertical-stack
-    cards:
+      
       - type: entities
-        title: Zone Control & Status
-        show_header_toggle: false
-        entities:
-          - entity: input_select.cs_active_irrigation_zones # Renamed helper
-          - entity: input_boolean.zone_1_enabled # Assumes these exist from zone_controls.yaml (or similar)
-          - entity: input_boolean.zone_2_enabled # Assumes these exist from zone_controls.yaml (or similar)
-          - entity: input_boolean.zone_3_enabled # Assumes these exist from zone_controls.yaml (or similar)
-          - entity: sensor.active_zones_count # From zone_controls.yaml
-          - type: divider
-          - entity: sensor.zone_1_vwc # From zone_controls.yaml
-          - entity: sensor.zone_1_ec # From zone_controls.yaml
-          - entity: sensor.zone_2_vwc # From zone_controls.yaml
-          - entity: sensor.zone_2_ec # From zone_controls.yaml
-          - entity: sensor.zone_3_vwc # From zone_controls.yaml
-          - entity: sensor.zone_3_ec # From zone_controls.yaml
-
-      - type: entities
-        title: Dryback Tracking
-        show_header_toggle: false
-        entities:
-          - entity: sensor.dryback_in_progress
-          - entity: sensor.dryback_current_percentage
-          - entity: sensor.dryback_current_duration
-          - type: divider
-          - entity: sensor.dryback_last_percentage
-          - entity: sensor.dryback_last_duration
-          - entity: sensor.dryback_last_peak_vwc
-          - entity: sensor.dryback_last_valley_vwc
-          - type: divider
-          - entity: sensor.dryback_avg_percentage_24h
-          - entity: sensor.dryback_avg_duration_24h
-          - entity: sensor.dryback_count_24h
-
-  # Column 3: Graphs
-  - view_layout:
-      grid-column: 3 / 4 # Span third column
-    type: vertical-stack
-    cards:
-      - type: history-graph
-        title: VWC Monitoring (24h)
-        hours_to_show: 24
-        entities:
-          - entity: sensor.cs_configured_avg_vwc
-            name: Average VWC
-          - entity: sensor.zone_1_vwc
-            name: Zone 1 VWC
-          - entity: sensor.zone_2_vwc
-            name: Zone 2 VWC
-          - entity: sensor.zone_3_vwc
-            name: Zone 3 VWC
-          - entity: sensor.dryback_last_peak_vwc
-            name: Peak VWC
-          - entity: sensor.dryback_last_valley_vwc
-            name: Valley VWC
-
-      - type: history-graph
-        title: EC Monitoring (24h)
-        hours_to_show: 24
-        entities:
-          - entity: sensor.cs_configured_avg_ec
-            name: Average EC
-          - entity: sensor.zone_1_ec
-            name: Zone 1 EC
-          - entity: sensor.zone_2_ec
-            name: Zone 2 EC
-          - entity: sensor.zone_3_ec
-            name: Zone 3 EC
-          - entity: sensor.cs_current_ec_target
-            name: Target EC
-
-  # Column 4: Settings (Split into multiple cards for better organization)
-  - view_layout:
-      grid-column: 4 / 5 # Span fourth column
-    type: vertical-stack
-    cards:
-      - type: entities
-        title: General & Substrate Settings
+        title: Light & Irrigation Settings
         show_header_toggle: false
         entities:
           - entity: input_datetime.cs_lights_on_time
@@ -148,58 +64,7 @@ cards:
           - entity: input_number.cs_lights_fade_out_minutes
           - entity: input_number.cs_dripper_flow_rate
           - entity: input_select.cs_aggregation_method
-          - type: divider
-          - entity: input_number.cs_substrate_size
-          - entity: input_number.cs_substrate_volume
-          - entity: input_number.cs_substrate_field_capacity
-          - entity: input_number.cs_substrate_saturation_point
-          - entity: input_number.cs_substrate_critical_vwc
-          - entity: input_number.cs_substrate_max_ec
-          - entity: input_number.cs_substrate_water_retention_factor
-
-      - type: entities
-        title: Phase Settings
-        show_header_toggle: false
-        entities:
-          - type: section
-            label: "P0: Pre-Irrigation Dry Back"
-          - entity: input_number.cs_p0_veg_dryback_target
-          - entity: input_number.cs_p0_gen_dryback_target
-          - entity: input_number.cs_p0_min_wait_time
-          - entity: input_number.cs_p0_max_wait_time
-          - type: section
-            label: "P1: Ramp-Up Phase"
-          - entity: input_number.cs_p1_initial_shot_size_percent
-          - entity: input_number.cs_p1_shot_size_increment_percent
-          - entity: input_number.cs_p1_max_shot_size_percent
-          - entity: input_number.cs_p1_time_between_shots
-          - entity: input_number.cs_p1_max_shots
-          - entity: input_number.cs_p1_min_shots
-          - entity: input_number.cs_p1_target_vwc
-          - entity: input_number.cs_p1_shot_count # Display only
-            name: P1 Shot Count (Current)
-          - type: section
-            label: "P2: Maintenance Phase"
-          - entity: input_number.cs_p2_shot_size_percent
-          - entity: input_number.cs_p2_vwc_threshold
-          - entity: input_number.cs_p2_veg_frequency
-          - entity: input_number.cs_p2_gen_frequency
-          - entity: input_number.cs_p2_ec_high_threshold
-          - entity: input_number.cs_p2_ec_low_threshold
-          - entity: input_number.cs_p2_vwc_adjustment_high_ec
-          - entity: input_number.cs_p2_vwc_adjustment_low_ec
-          - entity: input_number.cs_p2_shot_count # Display only
-            name: P2 Shot Count (Current)
-          - type: section
-            label: "P3: Overnight Dry Back"
-          - entity: input_datetime.cs_p3_start_time # Manual Override
-          - entity: input_number.cs_p3_veg_last_irrigation
-          - entity: input_number.cs_p3_gen_last_irrigation
-          - entity: input_number.cs_p3_emergency_vwc_threshold
-          - entity: input_number.cs_p3_emergency_shot_size_percent
-          - entity: input_number.cs_p3_shot_count # Display only
-            name: P3 Shot Count (Current)
-
+          
       - type: entities
         title: EC Target Settings (mS/cm)
         show_header_toggle: false
@@ -220,6 +85,58 @@ cards:
             label: Flush Mode
           - entity: input_number.cs_ec_target_flush
 
+  # Column 2: Zones & Substrate Settings
+  - view_layout:
+      grid-column: 2 / 3
+    type: vertical-stack
+    cards:
+      - type: entities
+        title: Zone Control & Status
+        show_header_toggle: false
+        entities:
+          - entity: input_select.cs_active_irrigation_zones
+          - entity: input_boolean.zone_1_enabled
+          - entity: input_boolean.zone_2_enabled
+          - entity: input_boolean.zone_3_enabled
+          - entity: sensor.active_zones_count
+          - type: divider
+          - entity: sensor.vwc_r1_front
+            name: Zone 1 Front VWC
+          - entity: sensor.ec_r1_front
+            name: Zone 1 Front EC
+          - entity: sensor.vwc_r1_back
+            name: Zone 1 Back VWC
+          - entity: sensor.ec_r1_back
+            name: Zone 1 Back EC
+          - entity: sensor.vwc_r2_front
+            name: Zone 2 Front VWC
+          - entity: sensor.ec_r2_front
+            name: Zone 2 Front EC
+          - entity: sensor.vwc_r2_back
+            name: Zone 2 Back VWC
+          - entity: sensor.ec_r2_back
+            name: Zone 2 Back EC
+          - entity: sensor.vwc_r3_front
+            name: Zone 3 Front VWC
+          - entity: sensor.ec_r3_front
+            name: Zone 3 Front EC
+          - entity: sensor.vwc_r3_back
+            name: Zone 3 Back VWC
+          - entity: sensor.ec_r3_back
+            name: Zone 3 Back EC
+      
+      - type: entities
+        title: Substrate Settings
+        show_header_toggle: false
+        entities:
+          - entity: input_number.cs_substrate_size
+          - entity: input_number.cs_substrate_volume
+          - entity: input_number.cs_substrate_field_capacity
+          - entity: input_number.cs_substrate_saturation_point
+          - entity: input_number.cs_substrate_critical_vwc
+          - entity: input_number.cs_substrate_max_ec
+          - entity: input_number.cs_substrate_water_retention_factor
+      
       - type: entities
         title: Dryback & Sensor Settings
         show_header_toggle: false
@@ -233,3 +150,126 @@ cards:
           - entity: input_number.cs_max_valid_vwc
           - entity: input_number.cs_min_valid_ec
           - entity: input_number.cs_max_valid_ec
+
+  # Column 3: Dryback Tracking & Phase P0-P1 Settings
+  - view_layout:
+      grid-column: 3 / 4
+    type: vertical-stack
+    cards:
+      - type: entities
+        title: Dryback Tracking
+        show_header_toggle: false
+        entities:
+          - entity: sensor.dryback_in_progress
+          - entity: sensor.dryback_current_percentage
+          - entity: sensor.dryback_current_duration
+          - type: divider
+          - entity: sensor.dryback_last_percentage
+          - entity: sensor.dryback_last_duration
+          - entity: sensor.dryback_last_peak_vwc
+          - entity: sensor.dryback_last_valley_vwc
+          - type: divider
+          - entity: sensor.dryback_avg_percentage_24h
+          - entity: sensor.dryback_avg_duration_24h
+          - entity: sensor.dryback_count_24h
+          
+      - type: entities
+        title: P0 & P1 Phase Settings
+        show_header_toggle: false
+        entities:
+          - type: section
+            label: "P0: Pre-Irrigation Dry Back"
+          - entity: input_number.cs_p0_veg_dryback_target
+          - entity: input_number.cs_p0_gen_dryback_target
+          - entity: input_number.cs_p0_min_wait_time
+          - entity: input_number.cs_p0_max_wait_time
+          - type: section
+            label: "P1: Ramp-Up Phase"
+          - entity: input_number.cs_p1_initial_shot_size_percent
+          - entity: input_number.cs_p1_shot_size_increment_percent
+          - entity: input_number.cs_p1_max_shot_size_percent
+          - entity: input_number.cs_p1_time_between_shots
+          - entity: input_number.cs_p1_max_shots
+          - entity: input_number.cs_p1_min_shots
+          - entity: input_number.cs_p1_target_vwc
+          - entity: input_number.cs_p1_shot_count
+            name: P1 Shot Count (Current)
+            
+      - type: history-graph
+        title: VWC Monitoring (24h)
+        hours_to_show: 24
+        entities:
+          - entity: sensor.cs_configured_avg_vwc
+            name: Average VWC
+          - entity: sensor.vwc_r1_front
+            name: Zone 1 Front
+          - entity: sensor.vwc_r1_back
+            name: Zone 1 Back
+          - entity: sensor.vwc_r2_front
+            name: Zone 2 Front
+          - entity: sensor.vwc_r2_back
+            name: Zone 2 Back
+          - entity: sensor.vwc_r3_front
+            name: Zone 3 Front
+          - entity: sensor.vwc_r3_back
+            name: Zone 3 Back
+          - entity: sensor.dryback_last_peak_vwc
+            name: Peak VWC
+          - entity: sensor.dryback_last_valley_vwc
+            name: Valley VWC
+
+  # Column 4: EC Graph & Phase P2-P3 Settings
+  - view_layout:
+      grid-column: 4 / 5
+    type: vertical-stack
+    cards:
+      - type: history-graph
+        title: EC Monitoring (24h)
+        hours_to_show: 24
+        entities:
+          - entity: sensor.cs_configured_avg_ec
+            name: Average EC
+          - entity: sensor.ec_r1_front
+            name: Zone 1 Front
+          - entity: sensor.ec_r1_back
+            name: Zone 1 Back
+          - entity: sensor.ec_r2_front
+            name: Zone 2 Front
+          - entity: sensor.ec_r2_back
+            name: Zone 2 Back
+          - entity: sensor.ec_r3_front
+            name: Zone 3 Front
+          - entity: sensor.ec_r3_back
+            name: Zone 3 Back
+          - entity: sensor.cs_current_ec_target
+            name: Target EC
+            
+      - type: entities
+        title: P2 & P3 Phase Settings
+        show_header_toggle: false
+        entities:
+          - type: section
+            label: "P2: Maintenance Phase"
+          - entity: input_number.cs_p2_shot_size_percent
+          - entity: input_number.cs_p2_vwc_threshold
+          - entity: input_number.cs_p2_veg_frequency
+          - entity: input_number.cs_p2_gen_frequency
+          - entity: input_number.cs_p2_ec_high_threshold
+          - entity: input_number.cs_p2_ec_low_threshold
+          - entity: input_number.cs_p2_vwc_adjustment_high_ec
+          - entity: input_number.cs_p2_vwc_adjustment_low_ec
+          - entity: input_number.cs_p2_shot_count
+            name: P2 Shot Count (Current)
+          - type: section
+            label: "P3: Overnight Dry Back"
+          - entity: input_datetime.cs_p3_start_time
+          - entity: input_number.cs_p3_veg_last_irrigation
+          - entity: input_number.cs_p3_gen_last_irrigation
+          - entity: input_number.cs_p3_emergency_vwc_threshold
+          - entity: input_number.cs_p3_emergency_shot_size_percent
+          - entity: input_number.cs_p3_shot_count
+            name: P3 Shot Count (Current)
+            
+grid_options:
+  columns: 48
+  rows: 8

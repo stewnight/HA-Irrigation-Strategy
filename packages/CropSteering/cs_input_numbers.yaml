@@ -499,3 +499,12 @@ cs_max_valid_ec:
   unit_of_measurement: "mS/cm"
   icon: mdi:flash
   initial: 5.0
+
+# DRYBACK HISTORY SETTINGS
+cs_dryback_history_max_entries:
+  name: Dryback History Max Entries
+  min: 1
+  max: 200 # Adjust based on expected JSON size and 255 char limit
+  step: 1
+  icon: mdi:history
+  initial: 10 # Default to 10 entries to keep JSON small
