@@ -1,44 +1,43 @@
-input_select:
-  # Input Select Helpers for Crop Steering
-  # Configured via Blueprints
+# Input Select Helpers for Crop Steering
+# Configured via Blueprints
 
-  cs_crop_steering_phase: # Renamed from crop_steering_phase for consistency
-    name: Crop Steering Phase
-    options:
-      - P0
-      - P1
-      - P2
-      - P3
-    initial: P0
-    icon: mdi:sprout
+cs_crop_steering_phase: # Renamed from crop_steering_phase for consistency
+  name: Crop Steering Phase
+  options:
+    - P0
+    - P1
+    - P2
+    - P3
+  initial: P0
+  icon: mdi:sprout
 
-  cs_steering_mode:
-    name: Growth Steering Mode
-    options:
-      - Vegetative
-      - Generative
-    initial: Vegetative
-    icon: mdi:leaf-maple
+cs_steering_mode:
+  name: Growth Steering Mode
+  options:
+    - Vegetative
+    - Generative
+  initial: Vegetative
+  icon: mdi:leaf-maple
 
-  cs_aggregation_method:
-    name: Sensor Aggregation Method
-    options:
-      - average
-      - min
-      - max
-    initial: average
-    icon: mdi:calculator
+cs_aggregation_method:
+  name: Sensor Aggregation Method
+  options:
+    - average
+    - min
+    - max
+  initial: average
+  icon: mdi:calculator
 
-  cs_active_irrigation_zones: # Renamed from active_irrigation_zones
-    name: Active Irrigation Zones
-    options:
-      - "No Zones (Disabled)"
-      - "All Zones"
-      - "Zone 1 Only"
-      - "Zone 2 Only"
-      - "Zone 3 Only"
-      - "Zones 1 & 2"
-      - "Zones 1 & 3"
-      - "Zones 2 & 3"
-    initial: "No Zones (Disabled)"
-    icon: mdi:valve
+cs_active_irrigation_zones: # Renamed from active_irrigation_zones
+  name: Active Irrigation Zones
+  options:
+    - "No Zones (Disabled)"
+    - "All Zones"
+    - "Zone 1 Only"
+    - "Zone 2 Only"
+    - "Zone 3 Only"
+    - "Zones 1 & 2"
+    - "Zones 1 & 3"
+    - "Zones 2 & 3"
+  initial: "No Zones (Disabled)"
+  icon: mdi:valve
