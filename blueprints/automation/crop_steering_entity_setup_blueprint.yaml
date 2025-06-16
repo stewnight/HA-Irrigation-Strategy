@@ -174,39 +174,36 @@ max_exceeded: silent
 
 variables:
   # Convert inputs to lists of entity IDs, handling null values
-  vwc_sensors_list: "{{ trigger.variables.vwc_sensors | default([]) }}"
-  ec_sensors_list: "{{ trigger.variables.ec_sensors | default([]) }}"
-  zone_switches_list: "{{ trigger.variables.zone_switches | default([]) }}"
+  vwc_sensors_list: "{{ vwc_sensors | default([]) }}"
+  ec_sensors_list: "{{ ec_sensors | default([]) }}"
+  zone_switches_list: "{{ zone_switches | default([]) }}"
   
   # Convert to strings for entity helpers
   vwc_sensors_str: "{{ vwc_sensors_list | join(', ') }}"
   ec_sensors_str: "{{ ec_sensors_list | join(', ') }}"
   zone_switches_str: "{{ zone_switches_list | join(', ') }}"
   
-  # Helper function to handle null/undefined values for single entity selections
-  null_as_empty: "{{ { 'value': '' } }}"
-  
   # Get single entity values or empty string if null
-  pump_switch_value: "{{ trigger.variables.pump_switch or '' }}"
-  waste_switch_value: "{{ trigger.variables.waste_switch or '' }}"
+  pump_switch_value: "{{ pump_switch | default('') }}"
+  waste_switch_value: "{{ waste_switch | default('') }}"
   
   # Zone 1 sensors
-  z1_vwc_front_value: "{{ trigger.variables.z1_vwc_front or '' }}"
-  z1_vwc_back_value: "{{ trigger.variables.z1_vwc_back or '' }}"
-  z1_ec_front_value: "{{ trigger.variables.z1_ec_front or '' }}"
-  z1_ec_back_value: "{{ trigger.variables.z1_ec_back or '' }}"
+  z1_vwc_front_value: "{{ z1_vwc_front | default('') }}"
+  z1_vwc_back_value: "{{ z1_vwc_back | default('') }}"
+  z1_ec_front_value: "{{ z1_ec_front | default('') }}"
+  z1_ec_back_value: "{{ z1_ec_back | default('') }}"
   
   # Zone 2 sensors
-  z2_vwc_front_value: "{{ trigger.variables.z2_vwc_front or '' }}"
-  z2_vwc_back_value: "{{ trigger.variables.z2_vwc_back or '' }}"
-  z2_ec_front_value: "{{ trigger.variables.z2_ec_front or '' }}"
-  z2_ec_back_value: "{{ trigger.variables.z2_ec_back or '' }}"
+  z2_vwc_front_value: "{{ z2_vwc_front | default('') }}"
+  z2_vwc_back_value: "{{ z2_vwc_back | default('') }}"
+  z2_ec_front_value: "{{ z2_ec_front | default('') }}"
+  z2_ec_back_value: "{{ z2_ec_back | default('') }}"
   
   # Zone 3 sensors
-  z3_vwc_front_value: "{{ trigger.variables.z3_vwc_front or '' }}"
-  z3_vwc_back_value: "{{ trigger.variables.z3_vwc_back or '' }}"
-  z3_ec_front_value: "{{ trigger.variables.z3_ec_front or '' }}"
-  z3_ec_back_value: "{{ trigger.variables.z3_ec_back or '' }}"
+  z3_vwc_front_value: "{{ z3_vwc_front | default('') }}"
+  z3_vwc_back_value: "{{ z3_vwc_back | default('') }}"
+  z3_ec_front_value: "{{ z3_ec_front | default('') }}"
+  z3_ec_back_value: "{{ z3_ec_back | default('') }}"
 
 trigger:
   - platform: homeassistant
