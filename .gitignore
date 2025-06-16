@@ -1,0 +1,39 @@
+# Home Assistant configuration files that should not be shared
+configuration.yaml
+secrets.yaml
+*.db
+*.log
+*.db-wal
+*.db-shm
+
+# Home Assistant specific directories
+.storage/
+deps/
+tts/
+www/
+custom_components/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Node modules (if any)
+node_modules/
+
+# Personal secrets and keys
+*.key
+*.pem
+*.crt
