@@ -136,7 +136,12 @@ class CropSteeringApp(hass.Hass):
 
         # Timers / Listener Handles (Store handles to allow cancellation)
         self.listener_handles = []
+        self.sensor_listener_handles = []  # Track sensor listeners separately
         self.timer_handles = {} # Store timer handles by name
+        
+        # Thread synchronization for shared data structures
+        import threading
+        self.data_lock = threading.RLock()  # Recursive lock for nested access
         # self.last_p1_trigger_minute = -1 # No longer needed with timer-based interval
 
         # --- Load Initial Configuration ---
@@ -326,22 +331,24 @@ class CropSteeringApp(hass.Hass):
             if self.vwc_sensor_entities and entity in self.vwc_sensor_entities:
                 sensor_type = "VWC"
                 if min_vwc <= value <= max_vwc:
-                    self.vwc_values[entity] = value
-                    # Add to history for analytics
-                    self.vwc_history.append(value)
-                    # Update analytics if enabled
-                    self._update_analytics_data('vwc', value)
+                    with self.data_lock:  # Thread-safe access to shared data
+                        self.vwc_values[entity] = value
+                        # Add to history for analytics
+                        self.vwc_history.append(value)
+                        # Update analytics if enabled
+                        self._update_analytics_data('vwc', value)
                     valid = True
 
             # Check if it's a main aggregation EC sensor
             elif self.ec_sensor_entities and entity in self.ec_sensor_entities:
                 sensor_type = "EC"
                 if min_ec <= value <= max_ec:
-                    self.ec_values[entity] = value
-                    # Add to history for analytics
-                    self.ec_history.append(value)
-                    # Update analytics if enabled
-                    self._update_analytics_data('ec', value)
+                    with self.data_lock:  # Thread-safe access to shared data
+                        self.ec_values[entity] = value
+                        # Add to history for analytics
+                        self.ec_history.append(value)
+                        # Update analytics if enabled
+                        self._update_analytics_data('ec', value)
                     valid = True
 
             # Check if it's a zone-specific sensor
@@ -588,14 +595,16 @@ class CropSteeringApp(hass.Hass):
         for helper_map in [self.config_helpers, self.setting_helpers, self.input_numbers_map]:
             config_setting_entities.update(helper_map.values())
         
-        # Separate sensor handles from config/setting handles
-        for i, handle in enumerate(self.listener_handles):
-            try:
-                # Check if this handle is for a sensor entity
-                # This is imperfect but safer than removing all handles
-                old_sensor_handles.append(handle)
-            except Exception as e:
-                self.log(f"Error checking listener handle: {e}", level="WARNING")
+        # FIXED: Properly separate sensor handles from config/setting handles
+        # Store config/setting handles separately so we don't lose them
+        config_handles = []
+        
+        # Keep track of which handles are for sensors vs config
+        if hasattr(self, 'sensor_listener_handles'):
+            old_sensor_handles = self.sensor_listener_handles.copy()
+        else:
+            self.sensor_listener_handles = []
+            old_sensor_handles = []
         
         # Cancel only sensor-related listeners
         for handle in old_sensor_handles:
@@ -604,8 +613,8 @@ class CropSteeringApp(hass.Hass):
             except Exception as e:
                 self.log(f"Error cancelling sensor listener handle: {e}", level="WARNING")
         
-        # Remove old sensor handles from main list (keep config/setting handles)
-        self.listener_handles = [h for h in self.listener_handles if h not in old_sensor_handles]
+        # Clear sensor handles list
+        self.sensor_listener_handles = []
 
         # Build comprehensive sensor entity set
         all_sensors = set()
@@ -635,7 +644,7 @@ class CropSteeringApp(hass.Hass):
                     entity_state = self.get_state(sensor)
                     if entity_state is not None or self.entity_exists(sensor):
                         handle = self.listen_state(self.sensor_update_cb, sensor)
-                        self.listener_handles.append(handle)
+                        self.sensor_listener_handles.append(handle)  # Track sensor handles separately
                         self.log(f"Listening to sensor: {sensor}")
                         successful_listeners += 1
                         
@@ -960,11 +969,17 @@ class CropSteeringApp(hass.Hass):
         timer_key = 'p1_next_shot_timer'
         if not self.timer_handles.get(timer_key): # If timer isn't running, it's time for a shot
             self.log(f"P1: Triggering shot {p1_shots + 1} (timer not running).")
-            self._run_p1_shot(p1_shots)
-            # Schedule the next check after the interval
-            if interval_minutes > 0:
-                 self.timer_handles[timer_key] = self.run_in(self._p1_interval_timer_cb, interval_minutes * 60, timer_key=timer_key)
-                 self.log(f"P1: Scheduled next shot check in {interval_minutes} minutes.")
+            try:
+                self._run_p1_shot(p1_shots)
+                # Schedule the next check after the interval
+                if interval_minutes > 0:
+                     self.timer_handles[timer_key] = self.run_in(self._p1_interval_timer_cb, interval_minutes * 60, timer_key=timer_key)
+                     self.log(f"P1: Scheduled next shot check in {interval_minutes} minutes.")
+            except Exception as e:
+                self.log(f"Error during P1 shot execution: {e}", level="ERROR")
+                # Clean up timer handle if shot failed
+                if timer_key in self.timer_handles:
+                    del self.timer_handles[timer_key]
         # else: # Debugging line
         #     self.log(f"P1 Check: Timer '{timer_key}' is still running. Waiting for interval.", level="DEBUG")
 
@@ -1182,9 +1197,16 @@ class CropSteeringApp(hass.Hass):
         if not real_pump_entity:
             self.log("Pump switch entity not configured in input_text!", level="ERROR")
             return
-        if self.get_state(real_pump_entity) == 'on':
-            self.log("Irrigation already running (real pump is on), cannot start another cycle.", level="WARNING")
-            return
+            
+        # CRITICAL SAFETY CHECK with proper exception handling
+        try:
+            pump_state = self.get_state(real_pump_entity)
+            if pump_state == 'on':
+                self.log("Irrigation already running (real pump is on), cannot start another cycle.", level="WARNING")
+                return
+        except Exception as e:
+            self.log(f"CRITICAL: Cannot verify pump state for safety check: {e}", level="ERROR")
+            return  # Fail safe - don't start irrigation if we can't verify pump state
 
         self.log(f"Starting irrigation cycle for {duration_seconds} seconds.")
 
@@ -1193,67 +1215,126 @@ class CropSteeringApp(hass.Hass):
             self.cancel_timer(self.timer_handles['irrigation_off'])
             del self.timer_handles['irrigation_off']
 
+        # PROPER IRRIGATION SEQUENCE FOR YOUR SETUP
         # 1. Turn off waste valve (if configured)
         real_waste_switch = self.get_state(self.config_helpers.get("config_waste_switch_entity", "input_text.cs_config_waste_switch_entity"))
         if real_waste_switch:
             self.log(f"Turning off waste valve: {real_waste_switch}")
             self.call_service("switch/turn_off", entity_id=real_waste_switch)
 
-        # 2. Turn on the main pump/valve
-        self.log(f"Turning on pump: {real_pump_entity}")
-        self.call_service("switch/turn_on", entity_id=real_pump_entity)
-
-        # 3. Turn on selected zone valves based on input_booleans
+        # 2. Get main line switch entity
+        main_line_switch = self.get_state(self.config_helpers.get("config_main_line_switch_entity", "input_text.cs_config_main_line_switch_entity"))
+        
+        # 3. Get individual zone switches
+        zone_1_switch = self.get_state(self.config_helpers.get("config_zone_1_switch_entity", "input_text.cs_config_zone_1_switch_entity"))
+        zone_2_switch = self.get_state(self.config_helpers.get("config_zone_2_switch_entity", "input_text.cs_config_zone_2_switch_entity"))
+        zone_3_switch = self.get_state(self.config_helpers.get("config_zone_3_switch_entity", "input_text.cs_config_zone_3_switch_entity"))
+        
+        # 4. Determine which zones are enabled
+        active_zones = []
         active_zone_switches = []
-        # Assume key 'config_zone_switch_entities' maps to input_text.cs_config_zone_switch_entities
-        zone_switch_list = self._get_entity_list_from_helper("config_zone_switch_entities", "input_text.cs_config_zone_switch_entities")
+        
+        for zone_num in range(1, 4):
+            zone_enabled_entity = f"input_boolean.cs_zone_{zone_num}_enabled"
+            try:
+                if self.get_state(zone_enabled_entity) == 'on':
+                    active_zones.append(zone_num)
+                    if zone_num == 1 and zone_1_switch:
+                        active_zone_switches.append(zone_1_switch)
+                    elif zone_num == 2 and zone_2_switch:
+                        active_zone_switches.append(zone_2_switch)
+                    elif zone_num == 3 and zone_3_switch:
+                        active_zone_switches.append(zone_3_switch)
+            except Exception as e:
+                self.log(f"Error checking zone {zone_num} enabled status: {e}", level="WARNING")
 
-        for i in range(1, 4): # Zones 1, 2, 3
-            # Assume keys like 'zone1_enabled_boolean' exist in setting_helpers map
-            zone_enabled_key = f"zone{i}_enabled_boolean"
-            # Provide a default entity ID based on common patterns if key not found
-            zone_enabled_entity_id = self.setting_helpers.get(zone_enabled_key, f"input_boolean.cs_zone_{i}_enabled") # Default added
+        if not active_zones:
+            self.log("No zones enabled, cannot start irrigation.", level="WARNING")
+            return
 
-            if zone_enabled_entity_id:
-                 try:
-                     if self.get_state(zone_enabled_entity_id) == 'on' and len(zone_switch_list) >= i:
-                         active_zone_switches.append(zone_switch_list[i-1]) # Use i-1 for 0-based index
-                 except Exception as e:
-                     self.log(f"Error checking zone {i} enabled status or switch list: {e}", level="WARNING")
-            else:
-                 self.log(f"Setting helper key '{zone_enabled_key}' not found for zone {i}", level="WARNING")
-
+        # 5. START IRRIGATION SEQUENCE (Order matters!)
+        # Step 1: Turn on main pump power
+        self.log(f"Step 1: Turning on main pump power: {real_pump_entity}")
+        self.call_service("switch/turn_on", entity_id=real_pump_entity)
+        
+        # Step 2: Turn on main line valve (after small delay)
+        if main_line_switch:
+            self.run_in(self._turn_on_main_line, 1, main_line_switch=main_line_switch)
+        
+        # Step 3: Turn on zone valves (after main line is open)
         if active_zone_switches:
-            self.log(f"Turning on zone valves: {active_zone_switches}")
-            self.call_service("switch/turn_on", entity_id=active_zone_switches)
-        else:
-             self.log("No zones enabled, only turning on main pump.", level="WARNING")
+            self.run_in(self._turn_on_zone_valves, 2, zone_switches=active_zone_switches, active_zones=active_zones)
 
 
         # 4. Set timer to turn everything off
         self.timer_handles['irrigation_off'] = self.run_in(self._stop_irrigation, duration_seconds)
         self.update_status_outputs() # Update status immediately
 
+    def _turn_on_main_line(self, kwargs):
+        """Turn on main line valve after pump startup delay."""
+        main_line_switch = kwargs.get('main_line_switch')
+        if main_line_switch:
+            self.log(f"Step 2: Turning on main line valve: {main_line_switch}")
+            self.call_service("switch/turn_on", entity_id=main_line_switch)
+
+    def _turn_on_zone_valves(self, kwargs):
+        """Turn on zone valves after main line is open."""
+        zone_switches = kwargs.get('zone_switches', [])
+        active_zones = kwargs.get('active_zones', [])
+        if zone_switches:
+            self.log(f"Step 3: Turning on zone valves for zones {active_zones}: {zone_switches}")
+            self.call_service("switch/turn_on", entity_id=zone_switches)
+
     def _stop_irrigation(self, kwargs):
-        """Turns off pump and all zone valves."""
+        """Turns off pump and all zone valves in proper sequence."""
         self.log("Stopping irrigation cycle.")
         if 'irrigation_off' in self.timer_handles: # Clear timer handle
              del self.timer_handles['irrigation_off']
 
+        # Get all switches
         real_pump_entity = self.get_state(self.config_helpers.get("config_pump_switch_entity", "input_text.cs_config_pump_switch_entity"))
-        zone_switch_list = self._get_entity_list_from_helper("config_zone_switch_entities", "input_text.cs_config_zone_switch_entities")
+        main_line_switch = self.get_state(self.config_helpers.get("config_main_line_switch_entity", "input_text.cs_config_main_line_switch_entity"))
+        zone_1_switch = self.get_state(self.config_helpers.get("config_zone_1_switch_entity", "input_text.cs_config_zone_1_switch_entity"))
+        zone_2_switch = self.get_state(self.config_helpers.get("config_zone_2_switch_entity", "input_text.cs_config_zone_2_switch_entity"))
+        zone_3_switch = self.get_state(self.config_helpers.get("config_zone_3_switch_entity", "input_text.cs_config_zone_3_switch_entity"))
 
-        # 1. Turn off zone valves
-        if zone_switch_list:
-            self.log(f"Turning off zone valves: {zone_switch_list}")
-            self.call_service("switch/turn_off", entity_id=zone_switch_list)
+        # PROPER SHUTDOWN SEQUENCE (Reverse order of startup)
+        # Step 1: Turn off zone valves first
+        zone_switches_to_turn_off = []
+        if zone_1_switch:
+            zone_switches_to_turn_off.append(zone_1_switch)
+        if zone_2_switch:
+            zone_switches_to_turn_off.append(zone_2_switch)
+        if zone_3_switch:
+            zone_switches_to_turn_off.append(zone_3_switch)
+            
+        if zone_switches_to_turn_off:
+            self.log(f"Step 1: Turning off zone valves: {zone_switches_to_turn_off}")
+            self.call_service("switch/turn_off", entity_id=zone_switches_to_turn_off)
 
-        # 2. Turn off main pump/valve
+        # Step 2: Turn off main line valve (with delay)
+        if main_line_switch:
+            self.run_in(self._turn_off_main_line, 2, main_line_switch=main_line_switch)
+
+        # Step 3: Turn off main pump (with delay to allow pressure to drop)
         if real_pump_entity:
-            self.log(f"Turning off pump: {real_pump_entity}")
-            self.call_service("switch/turn_off", entity_id=real_pump_entity)
+            self.run_in(self._turn_off_pump, 4, pump_entity=real_pump_entity)
 
         self.update_status_outputs() # Update status
+
+    def _turn_off_main_line(self, kwargs):
+        """Turn off main line valve during shutdown sequence."""
+        main_line_switch = kwargs.get('main_line_switch')
+        if main_line_switch:
+            self.log(f"Step 2: Turning off main line valve: {main_line_switch}")
+            self.call_service("switch/turn_off", entity_id=main_line_switch)
+
+    def _turn_off_pump(self, kwargs):
+        """Turn off main pump during shutdown sequence."""
+        pump_entity = kwargs.get('pump_entity')
+        if pump_entity:
+            self.log(f"Step 3: Turning off main pump: {pump_entity}")
+            self.call_service("switch/turn_off", entity_id=pump_entity)
 
     def _cancel_timers(self):
          """Cancel any running timers."""
