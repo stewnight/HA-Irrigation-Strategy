@@ -88,6 +88,16 @@ Professional-grade precision irrigation system for Home Assistant that implement
 
 6. **Restart Home Assistant again**
 
+7. **Install AppDaemon (Optional but Recommended):**
+   ```bash
+   # Install AppDaemon add-on from Home Assistant Add-on Store
+   # OR via HACS: Search for "AppDaemon 4" 
+   # OR Docker: docker pull acockburn/appdaemon:latest
+   
+   # Copy AppDaemon configuration
+   cp -r appdaemon/ /config/appdaemon/
+   ```
+
 ### Option 2: Manual Install
 
 1. **Download the system:**
@@ -135,19 +145,40 @@ wget -O - https://raw.githubusercontent.com/JakeTheRabbit/HA-Irrigation-Strategy
 
 ## ⚙️ Configuration
 
-### 🔌 **Hardware Requirements**
+### 🔌 **Requirements**
 
-**Essential:**
+**Hardware (Essential):**
 - VWC (moisture) sensors for each zone
 - EC (electrical conductivity) sensors for each zone  
 - Main irrigation pump with switch control
 - Main line valve (opens water flow to grow area)
 - Individual zone valves for each irrigation zone
 
-**Optional:**
+**Software Dependencies:**
+- **Home Assistant 2024.3.0+** (Required)
+- **AppDaemon 4.2+** (Recommended for advanced features)
+
+**Hardware (Optional):**
 - Waste/drain valve for system flushing
 - Environmental sensors (temperature, humidity, VPD)
 - Water level sensors
+
+### 📋 **Feature Dependencies**
+
+**✅ Works WITHOUT AppDaemon:**
+- Basic 4-phase irrigation cycle
+- VWC/EC sensor monitoring
+- Manual phase control
+- Dashboard interface
+- Safety systems
+
+**🚀 Requires AppDaemon for:**
+- **EC Stacking** - Advanced nutrient accumulation
+- **Real-time Analytics** - Performance metrics and efficiency tracking
+- **Dryback Detection** - Automatic peak/valley analysis
+- **Machine Learning** - Predictive analytics and pattern recognition
+- **Advanced Safety** - Complex multi-sensor validation
+- **MQTT Monitoring** - Remote monitoring and alerts
 
 ### 📝 **Quick Configuration**
 

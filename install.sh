@@ -49,6 +49,11 @@ cp -r packages/CropSteering "$PACKAGES_DIR/"
 echo -e "${GREEN}✓ Package files copied${NC}"
 
 # Install AppDaemon app (optional)
+echo ""
+echo -e "${YELLOW}🚀 AppDaemon Installation (Recommended for Advanced Features):${NC}"
+echo "AppDaemon enables: EC Stacking, Real-time Analytics, Dryback Detection, ML Features"
+echo "Basic irrigation works without AppDaemon, but advanced features require it."
+echo ""
 read -p "Do you want to install the AppDaemon app for advanced features? (y/N): " install_appdaemon
 if [[ $install_appdaemon =~ ^[Yy]$ ]]; then
     if [ ! -d "$APPDAEMON_DIR" ]; then
@@ -59,6 +64,9 @@ if [[ $install_appdaemon =~ ^[Yy]$ ]]; then
     echo "🐍 Installing AppDaemon app..."
     cp -r appdaemon/* "$APPDAEMON_DIR/"
     echo -e "${GREEN}✓ AppDaemon app installed${NC}"
+    echo -e "${YELLOW}⚠️  Make sure AppDaemon add-on is installed from HA Add-on Store${NC}"
+else
+    echo -e "${YELLOW}⚠️  Skipping AppDaemon - advanced features will be disabled${NC}"
 fi
 
 # Copy configuration template
