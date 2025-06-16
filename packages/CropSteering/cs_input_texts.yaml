@@ -1,87 +1,88 @@
-# Input Text Helpers for Crop Steering
-# Configured via Blueprints or used internally
+input_text:
+  # Input Text Helpers for Crop Steering
+  # Configured via Blueprints or used internally
 
-cs_dryback_history:
-  name: CS Dryback History (JSON)
-  max: 255 # Note: Limited storage, AppDaemon will prune
-  initial: "[]"
-  icon: mdi:history
+  cs_dryback_history:
+    name: CS Dryback History (JSON)
+    max: 255 # Note: Limited storage, AppDaemon will prune
+    initial: "[]"
+    icon: mdi:history
 
-cs_ec_stacking_active_phases: # Moved here
-  name: EC Stacking Active Phases
-  initial: "P2" # Default to only P2
-  icon: mdi:format-list-checks
+  cs_ec_stacking_active_phases: # Moved here
+    name: EC Stacking Active Phases
+    initial: "P2" # Default to only P2
+    icon: mdi:format-list-checks
   # Comma-separated list, e.g., "P1, P2"
 
-cs_config_vwc_sensor_entities:
-  name: CS Config - VWC Sensor Entities
+  cs_config_vwc_sensor_entities:
+    name: CS Config - VWC Sensor Entities
   # Example: sensor.zone1_vwc, sensor.zone2_vwc
-  initial: ""
-  icon: mdi:water-percent
-cs_config_ec_sensor_entities:
-  name: CS Config - EC Sensor Entities
+    initial: ""
+    icon: mdi:water-percent
+  cs_config_ec_sensor_entities:
+    name: CS Config - EC Sensor Entities
   # Example: sensor.zone1_ec, sensor.zone2_ec
-  initial: ""
-  icon: mdi:flash
-# Optional: Add temp sensors if needed later
-# cs_config_temp_sensor_entities:
-#   name: CS Config - Temperature Sensor Entities
-#   initial: ""
-#   icon: mdi:thermometer
-cs_config_pump_switch_entity:
-  name: CS Config - Irrigation Pump Switch Entity
-  initial: ""
-  icon: mdi:water-pump
-cs_config_zone_switch_entities:
-  name: CS Config - Zone Switch Entities (comma-separated, order matters)
+    initial: ""
+    icon: mdi:flash
+  # Optional: Add temp sensors if needed later
+  # cs_config_temp_sensor_entities:
+  #   name: CS Config - Temperature Sensor Entities
+  #   initial: ""
+  #   icon: mdi:thermometer
+  cs_config_pump_switch_entity:
+    name: CS Config - Irrigation Pump Switch Entity
+    initial: ""
+    icon: mdi:water-pump
+  cs_config_zone_switch_entities:
+    name: CS Config - Zone Switch Entities (comma-separated, order matters)
   # Example: switch.zone1_valve, switch.zone2_valve
-  initial: ""
-  icon: mdi:valve
-cs_config_waste_switch_entity:
-  name: CS Config - Waste/Flush Switch Entity (Optional)
-  initial: ""
-  icon: mdi:pipe-valve
-# Zone 1 Sensors
-cs_config_z1_vwc_front:
-  name: CS Config - Zone 1 VWC Front Sensor
-  initial: ""
-cs_config_z1_vwc_back:
-  name: CS Config - Zone 1 VWC Back Sensor
-  initial: ""
-cs_config_z1_ec_front:
-  name: CS Config - Zone 1 EC Front Sensor
-  initial: ""
-cs_config_z1_ec_back:
-  name: CS Config - Zone 1 EC Back Sensor
-  initial: ""
-# Zone 2 Sensors
-cs_config_z2_vwc_front:
-  name: CS Config - Zone 2 VWC Front Sensor
-  initial: ""
-cs_config_z2_vwc_back:
-  name: CS Config - Zone 2 VWC Back Sensor
-  initial: ""
-cs_config_z2_ec_front:
-  name: CS Config - Zone 2 EC Front Sensor
-  initial: ""
-cs_config_z2_ec_back:
-  name: CS Config - Zone 2 EC Back Sensor
-  initial: ""
-# Zone 3 Sensors
-cs_config_z3_vwc_front:
-  name: CS Config - Zone 3 VWC Front Sensor
-  initial: ""
-cs_config_z3_vwc_back:
-  name: CS Config - Zone 3 VWC Back Sensor
-  initial: ""
-cs_config_z3_ec_front:
-  name: CS Config - Zone 3 EC Front Sensor
-  initial: ""
-cs_config_z3_ec_back:
-  name: CS Config - Zone 3 EC Back Sensor
-  initial: ""
-# Optional: Add light entity if needed later
-# cs_config_light_entity:
-#   name: CS Config - Light Entity
-#   initial: ""
-#   icon: mdi:lightbulb
+    initial: ""
+    icon: mdi:valve
+  cs_config_waste_switch_entity:
+    name: CS Config - Waste/Flush Switch Entity (Optional)
+    initial: ""
+    icon: mdi:pipe-valve
+  # Zone 1 Sensors
+  cs_config_z1_vwc_front:
+    name: CS Config - Zone 1 VWC Front Sensor
+    initial: ""
+  cs_config_z1_vwc_back:
+    name: CS Config - Zone 1 VWC Back Sensor
+    initial: ""
+  cs_config_z1_ec_front:
+    name: CS Config - Zone 1 EC Front Sensor
+    initial: ""
+  cs_config_z1_ec_back:
+    name: CS Config - Zone 1 EC Back Sensor
+    initial: ""
+  # Zone 2 Sensors
+  cs_config_z2_vwc_front:
+    name: CS Config - Zone 2 VWC Front Sensor
+    initial: ""
+  cs_config_z2_vwc_back:
+    name: CS Config - Zone 2 VWC Back Sensor
+    initial: ""
+  cs_config_z2_ec_front:
+    name: CS Config - Zone 2 EC Front Sensor
+    initial: ""
+  cs_config_z2_ec_back:
+    name: CS Config - Zone 2 EC Back Sensor
+    initial: ""
+  # Zone 3 Sensors
+  cs_config_z3_vwc_front:
+    name: CS Config - Zone 3 VWC Front Sensor
+    initial: ""
+  cs_config_z3_vwc_back:
+    name: CS Config - Zone 3 VWC Back Sensor
+    initial: ""
+  cs_config_z3_ec_front:
+    name: CS Config - Zone 3 EC Front Sensor
+    initial: ""
+  cs_config_z3_ec_back:
+    name: CS Config - Zone 3 EC Back Sensor
+    initial: ""
+  # Optional: Add light entity if needed later
+  # cs_config_light_entity:
+  #   name: CS Config - Light Entity
+  #   initial: ""
+  #   icon: mdi:lightbulb

@@ -1,23 +1,21 @@
-# Input Boolean Helpers for Crop Steering
-# Configured via Blueprints
+input_boolean:
+  cs_ec_stacking_enabled:
+    name: Enable EC Stacking
+    initial: off
+    icon: mdi:chart-line-stacked
 
-cs_ec_stacking_enabled:
-  name: Enable EC Stacking
-  initial: off
-  icon: mdi:chart-line-stacked
+  # Zone Enable/Disable Controls (Referenced by AppDaemon)
+  cs_zone_1_enabled:
+    name: Zone 1 Enabled
+    initial: off
+    icon: mdi:valve
 
-# Zone Enable/Disable Controls (Referenced by AppDaemon)
-cs_zone_1_enabled:
-  name: Zone 1 Enabled
-  initial: off
-  icon: mdi:valve
+  cs_zone_2_enabled:
+    name: Zone 2 Enabled
+    initial: off
+    icon: mdi:valve
 
-cs_zone_2_enabled:
-  name: Zone 2 Enabled
-  initial: off
-  icon: mdi:valve
-
-cs_zone_3_enabled:
-  name: Zone 3 Enabled
-  initial: off
-  icon: mdi:valve
+  cs_zone_3_enabled:
+    name: Zone 3 Enabled
+    initial: off
+    icon: mdi:valve
