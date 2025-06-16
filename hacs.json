@@ -1,8 +1,6 @@
 {
   "name": "Crop Steering System",
   "hacs": "1.6.0",
-  "domains": ["sensor", "switch", "input_number", "input_select", "input_boolean", "input_text", "input_datetime", "automation"],
-  "iot_class": "Local Polling",
-  "homeassistant": "2024.3.0",
-  "render_readme": true
+  "render_readme": true,
+  "homeassistant": "2024.3.0"
 }
