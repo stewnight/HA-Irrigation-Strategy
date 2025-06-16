@@ -64,45 +64,27 @@ cards:
     entities:
       - type: section
         label: Zone 1 Sensors
-      - entity: sensor.cs_z1_front_vwc
-        name: Zone 1 Front VWC
+      - entity: sensor.cs_zone_1_vwc
+        name: Zone 1 VWC (Combined)
         icon: mdi:water-percent
-      - entity: sensor.cs_z1_back_vwc
-        name: Zone 1 Back VWC
-        icon: mdi:water-percent
-      - entity: sensor.cs_z1_front_ec
-        name: Zone 1 Front EC
-        icon: mdi:flash
-      - entity: sensor.cs_z1_back_ec
-        name: Zone 1 Back EC
+      - entity: sensor.cs_zone_1_ec
+        name: Zone 1 EC (Combined)
         icon: mdi:flash
       - type: section
         label: Zone 2 Sensors
-      - entity: sensor.cs_z2_front_vwc
-        name: Zone 2 Front VWC
+      - entity: sensor.cs_zone_2_vwc
+        name: Zone 2 VWC (Combined)
         icon: mdi:water-percent
-      - entity: sensor.cs_z2_back_vwc
-        name: Zone 2 Back VWC
-        icon: mdi:water-percent
-      - entity: sensor.cs_z2_front_ec
-        name: Zone 2 Front EC
-        icon: mdi:flash
-      - entity: sensor.cs_z2_back_ec
-        name: Zone 2 Back EC
+      - entity: sensor.cs_zone_2_ec
+        name: Zone 2 EC (Combined)
         icon: mdi:flash
       - type: section
         label: Zone 3 Sensors
-      - entity: sensor.cs_z3_front_vwc
-        name: Zone 3 Front VWC
+      - entity: sensor.cs_zone_3_vwc
+        name: Zone 3 VWC (Combined)
         icon: mdi:water-percent
-      - entity: sensor.cs_z3_back_vwc
-        name: Zone 3 Back VWC
-        icon: mdi:water-percent
-      - entity: sensor.cs_z3_front_ec
-        name: Zone 3 Front EC
-        icon: mdi:flash
-      - entity: sensor.cs_z3_back_ec
-        name: Zone 3 Back EC
+      - entity: sensor.cs_zone_3_ec
+        name: Zone 3 EC (Combined)
         icon: mdi:flash
 
   # Phase Settings in Tabs

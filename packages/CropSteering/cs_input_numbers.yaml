@@ -505,3 +505,13 @@ cs_dryback_history_max_entries:
   step: 1
   icon: mdi:history
   initial: 10 # Default to 10 entries to keep JSON small
+
+# Crop management
+cs_days_since_flip:
+  name: Days Since Flip to Flower
+  min: 0
+  max: 365
+  step: 1
+  unit_of_measurement: "days"
+  initial: 0
+  icon: mdi:calendar-clock

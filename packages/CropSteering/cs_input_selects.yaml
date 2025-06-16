@@ -41,3 +41,30 @@ cs_active_irrigation_zones: # Renamed from active_irrigation_zones
     - "Zones 2 & 3"
   initial: "No Zones (Disabled)"
   icon: mdi:valve
+
+# Crop profile selection
+cs_crop_type_profile:
+  name: Crop Type Profile
+  options:
+    - "Cannabis - Indica"
+    - "Cannabis - Sativa" 
+    - "Cannabis - Hybrid"
+    - "Tomato"
+    - "Lettuce"
+    - "Basil"
+    - "Custom"
+  initial: "Cannabis - Hybrid"
+  icon: mdi:leaf
+
+cs_active_crop_profile:
+  name: Active Crop Profile
+  options:
+    - "Cannabis - Indica"
+    - "Cannabis - Sativa"
+    - "Cannabis - Hybrid" 
+    - "Tomato"
+    - "Lettuce"
+    - "Basil"
+    - "Custom"
+  initial: "Cannabis - Hybrid"
+  icon: mdi:sprout-outline

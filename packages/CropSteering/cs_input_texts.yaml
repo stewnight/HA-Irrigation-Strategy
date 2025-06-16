@@ -7,6 +7,31 @@ cs_dryback_history:
   initial: "[]"
   icon: mdi:history
 
+# Analytics history storage
+cs_vwc_history_json:
+  name: CS VWC History JSON
+  max: 255
+  initial: "[]"
+  icon: mdi:chart-line
+
+cs_ec_history_json:
+  name: CS EC History JSON
+  max: 255
+  initial: "[]"
+  icon: mdi:flash
+
+cs_shot_history_24h:
+  name: CS Shot History 24h JSON
+  max: 255
+  initial: "[]"
+  icon: mdi:counter
+
+cs_water_usage_history_7d:
+  name: CS Water Usage History 7d JSON
+  max: 255
+  initial: "[]"
+  icon: mdi:water
+
 cs_ec_stacking_active_phases: # Moved here
   name: EC Stacking Active Phases
   initial: "P2" # Default to only P2
@@ -32,6 +57,22 @@ cs_config_pump_switch_entity:
   name: CS Config - Irrigation Pump Switch Entity
   initial: ""
   icon: mdi:water-pump
+cs_config_main_line_switch_entity:
+  name: CS Config - Main Line Switch Entity
+  initial: ""
+  icon: mdi:pipe
+cs_config_zone_1_switch_entity:
+  name: CS Config - Zone 1 Switch Entity
+  initial: ""
+  icon: mdi:valve
+cs_config_zone_2_switch_entity:
+  name: CS Config - Zone 2 Switch Entity
+  initial: ""
+  icon: mdi:valve
+cs_config_zone_3_switch_entity:
+  name: CS Config - Zone 3 Switch Entity
+  initial: ""
+  icon: mdi:valve
 cs_config_zone_switch_entities:
   name: CS Config - Zone Switch Entities (comma-separated, order matters)
 # Example: switch.zone1_valve, switch.zone2_valve

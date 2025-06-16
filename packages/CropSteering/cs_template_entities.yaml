@@ -456,73 +456,85 @@
       state_class: measurement
       icon: "mdi:timer"
 
-    - name: "dryback_potential_peak"
-      friendly_name: "Potential VWC Peak"
-      value_template: >
+    - name: "Potential VWC Peak"
+      unique_id: cs_dryback_potential_peak
+      state: >
         {% set current = states('sensor.cs_configured_avg_vwc') | float(0) %}
-        {% set previous = states('sensor.vwc_statistics_mean') | float(0) %}
+        {% set previous = this.attributes.get('previous_vwc', 0) | float(0) %}
         {% set threshold = states('input_number.cs_dryback_peak_detection_threshold') | float(0.5) %}
         {% if previous > current and (previous - current) > threshold and not is_state('sensor.dryback_in_progress', 'true') %}
           {{ previous }}
         {% else %}
-          {{ states('sensor.dryback_potential_peak') | default(0) }}
+          {{ this.state | default(0) }}
         {% endif %}
       unit_of_measurement: "%"
+      attributes:
+        previous_vwc: >
+          {{ states('sensor.cs_configured_avg_vwc') | float(0) }}
 
-    - name: "dryback_last_peak_time"
-      friendly_name: "Last Dryback Peak Time"
-      value_template: >
-        {% set potential_peak = states('sensor.dryback_potential_peak') %}
-        {% if potential_peak != 'unknown' and potential_peak != states('sensor.dryback_last_peak_vwc') %}
+    - name: "Last Dryback Peak Time"
+      unique_id: cs_dryback_last_peak_time
+      state: >
+        {% set potential_peak = states('sensor.cs_dryback_potential_peak') %}
+        {% set last_peak_vwc = states('sensor.cs_dryback_last_peak_vwc') %}
+        {% if potential_peak != 'unknown' and potential_peak != last_peak_vwc %}
           {{ now().isoformat() }}
         {% else %}
-          {{ states('sensor.dryback_last_peak_time') }}
+          {{ this.state | default('') }}
         {% endif %}
+      device_class: timestamp
 
-    - name: "dryback_last_peak_vwc"
-      friendly_name: "Last Dryback Peak VWC"
-      value_template: >
-        {% set potential_peak = states('sensor.dryback_potential_peak') %}
-        {% if potential_peak != 'unknown' and potential_peak != states('sensor.dryback_last_peak_vwc') %}
+    - name: "Last Dryback Peak VWC"
+      unique_id: cs_dryback_last_peak_vwc
+      state: >
+        {% set potential_peak = states('sensor.cs_dryback_potential_peak') %}
+        {% if potential_peak != 'unknown' and potential_peak != this.state %}
           {{ potential_peak }}
         {% else %}
-          {{ states('sensor.dryback_last_peak_vwc') }}
+          {{ this.state | default(0) }}
         {% endif %}
       unit_of_measurement: "%"
+      state_class: measurement
 
-    - name: "dryback_potential_valley"
-      friendly_name: "Potential VWC Valley"
-      value_template: >
+    - name: "Potential VWC Valley"
+      unique_id: cs_dryback_potential_valley
+      state: >
         {% set current = states('sensor.cs_configured_avg_vwc') | float(0) %}
-        {% set previous = states('sensor.vwc_statistics_mean') | float(0) %}
+        {% set previous = this.attributes.get('previous_vwc', 0) | float(0) %}
         {% set threshold = states('input_number.cs_dryback_valley_detection_threshold') | float(0.5) %}
         {% if previous < current and (current - previous) > threshold and is_state('sensor.dryback_in_progress', 'true') %}
-          {{ previous }}
+          {{ current }}
         {% else %}
-          {{ states('sensor.dryback_potential_valley') | default(0) }}
+          {{ this.state | default(0) }}
         {% endif %}
       unit_of_measurement: "%"
+      attributes:
+        previous_vwc: >
+          {{ states('sensor.cs_configured_avg_vwc') | float(0) }}
 
-    - name: "dryback_last_valley_time"
-      friendly_name: "Last Dryback Valley Time"
-      value_template: >
-        {% set potential_valley = states('sensor.dryback_potential_valley') %}
-        {% if potential_valley != 'unknown' and potential_valley != states('sensor.dryback_last_valley_vwc') %}
+    - name: "Last Dryback Valley Time"
+      unique_id: cs_dryback_last_valley_time
+      state: >
+        {% set potential_valley = states('sensor.cs_dryback_potential_valley') %}
+        {% set last_valley_vwc = states('sensor.cs_dryback_last_valley_vwc') %}
+        {% if potential_valley != 'unknown' and potential_valley != last_valley_vwc %}
           {{ now().isoformat() }}
         {% else %}
-          {{ states('sensor.dryback_last_valley_time') }}
+          {{ this.state | default('') }}
         {% endif %}
+      device_class: timestamp
 
-    - name: "dryback_last_valley_vwc"
-      friendly_name: "Last Dryback Valley VWC"
-      value_template: >
-        {% set potential_valley = states('sensor.dryback_potential_valley') %}
-        {% if potential_valley != 'unknown' and potential_valley != states('sensor.dryback_last_valley_vwc') %}
+    - name: "Last Dryback Valley VWC"
+      unique_id: cs_dryback_last_valley_vwc
+      state: >
+        {% set potential_valley = states('sensor.cs_dryback_potential_valley') %}
+        {% if potential_valley != 'unknown' and potential_valley != this.state %}
           {{ potential_valley }}
         {% else %}
-          {{ states('sensor.dryback_last_valley_vwc') }}
+          {{ this.state | default(0) }}
         {% endif %}
       unit_of_measurement: "%"
+      state_class: measurement
 
     - name: "dryback_last_percentage"
       friendly_name: "Last Dryback Percentage"
@@ -632,7 +644,7 @@
 
     - name: "dryback_history"
       friendly_name: "Dryback History"
-      value_template: "{{ states('input_text.dryback_history_json') }}"
+      state: "{{ states('input_text.cs_dryback_history') }}"
 
 #==============================================================================
 # ZONE CONTROL SENSORS (from crop_steering_zone_controls.yaml)
@@ -708,9 +720,9 @@
         {{ states('input_text.cs_config_z1_vwc_front') | length > 0 or
            states('input_text.cs_config_z1_vwc_back') | length > 0 }}
 
-    - name: "zone_2_vwc"
-      friendly_name: "Zone 2 VWC"
-      value_template: >
+    - name: "Zone 2 VWC"
+      unique_id: cs_zone_2_vwc
+      state: >
         {% set front_entity = states('input_text.cs_config_z2_vwc_front') %}
         {% set back_entity = states('input_text.cs_config_z2_vwc_back') %}
         {% set front = states(front_entity) | float(0) if front_entity else 0 %}
@@ -725,6 +737,8 @@
           unknown
         {% endif %}
       unit_of_measurement: "%"
+      state_class: measurement
+      device_class: moisture
       icon_template: "mdi:water-percent"
       availability: >
         {{ states('input_text.cs_config_z2_vwc_front') | length > 0 or
