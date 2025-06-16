@@ -1,0 +1,61 @@
+# ================================================================
+# Home Assistant Crop Steering Package - Main Entry Point
+# Advanced Irrigation Management System for Home Assistant
+# ================================================================
+#
+# This is the main package file that loads all crop steering components
+# from the organized CropSteering subdirectory structure.
+#
+# REQUIREMENTS:
+# - Home Assistant 2024.3 or later (for modern template format)
+# - AppDaemon 4.2+ for automation logic (crop_steering_app.py)
+# - VWC (Volumetric Water Content) sensors
+# - EC (Electrical Conductivity) sensors
+# - Irrigation control valves/pumps
+#
+# FEATURES:
+# - 4-phase crop steering cycle (P0-P3)
+# - Multi-crop profile support (Cannabis, Tomato, Lettuce, Basil, Custom)
+# - Advanced sensor fusion with outlier detection
+# - ML-based dryback prediction and pattern recognition
+# - Comprehensive analytics and performance monitoring
+# - MQTT remote monitoring and control
+# - Anomaly detection and alerting
+# - Growth stage prediction and recommendations
+#
+# ================================================================
+
+# Include all input helper files from organized subdirectory
+input_select: !include CropSteering/cs_input_selects.yaml
+input_number: !include CropSteering/cs_input_numbers.yaml
+input_boolean: !include CropSteering/cs_input_booleans.yaml
+input_text: !include CropSteering/cs_input_texts.yaml
+input_datetime: !include CropSteering/cs_input_datetimes.yaml
+
+# Include all template sensors from subdirectory
+template: 
+  - !include CropSteering/cs_template_entities.yaml
+  - !include CropSteering/cs_analytics_entities.yaml
+  - !include CropSteering/cs_sensor_fusion_entities.yaml
+  - !include CropSteering/cs_ml_analytics.yaml
+  - !include CropSteering/cs_mqtt_monitoring.yaml
+  - !include CropSteering/cs_crop_profiles.yaml
+
+# ================================================================
+# AUTOMATION NOTES:
+# ================================================================
+# Primary automation logic is handled by AppDaemon (crop_steering_app.py)
+# 
+# MQTT automations are in CropSteering/cs_mqtt_automations.yaml but must be included
+# separately in configuration.yaml to avoid circular references:
+#
+# Add this to your configuration.yaml:
+# automation mqtt_crop_steering: !include packages/CropSteering/cs_mqtt_automations.yaml
+# 
+# If not using AppDaemon, you would need to create additional automation
+# files to replace the AppDaemon logic for:
+# - Phase transitions (P0->P1->P2->P3)
+# - Irrigation triggering based on VWC thresholds
+# - Dryback monitoring and calculations
+# - Shot counting and timing
+# ================================================================
