@@ -60,10 +60,12 @@ Professional-grade precision irrigation system for Home Assistant that implement
    Category: Integration
    ```
    - Click **"ADD"**
+   - Wait for HACS to validate the repository
 
 3. **Install the integration:**
    - Search for **"Crop Steering System"** in HACS
-   - Click **"Download"**
+   - Click **"Download"** 
+   - Choose the latest version
    - **Restart Home Assistant**
 
 4. **Quick Setup:**
