@@ -1,10 +1,11 @@
 {
   "name": "Crop Steering System",
-  "content_in_root": false,
-  "filename": "crop_steering.zip",
-  "hide_default_branch": true,
+  "content_in_root": true,
+  "domains": ["sensor", "switch", "input_number", "input_select", "input_boolean", "input_text", "input_datetime", "automation"],
+  "iot_class": "Local Polling",
   "homeassistant": "2024.3.0",
-  "persistent_directory": false,
   "render_readme": true,
-  "zip_release": true
+  "documentation": "https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/blob/main/README.md",
+  "issue_tracker": "https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/issues",
+  "codeowners": ["@JakeTheRabbit"]
 }

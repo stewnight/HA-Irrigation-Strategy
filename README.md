@@ -45,11 +45,52 @@ Professional-grade precision irrigation system for Home Assistant that implement
 
 ## 📦 Installation
 
-### Option 1: Quick Install (Recommended)
+### Option 1: HACS Install (Recommended)
+
+**Install via HACS Custom Repository:**
+
+1. **Open HACS in Home Assistant:**
+   - Go to **HACS** > **Integrations**
+   - Click the **three dots menu (⋮)** in the top right
+   - Select **"Custom repositories"**
+
+2. **Add this repository:**
+   ```
+   Repository: https://github.com/JakeTheRabbit/HA-Irrigation-Strategy
+   Category: Integration
+   ```
+   - Click **"ADD"**
+
+3. **Install the integration:**
+   - Search for **"Crop Steering System"** in HACS
+   - Click **"Download"**
+   - **Restart Home Assistant**
+
+4. **Quick Setup:**
+   ```bash
+   # Download and edit configuration
+   wget https://raw.githubusercontent.com/JakeTheRabbit/HA-Irrigation-Strategy/main/crop_steering.env
+   nano crop_steering.env  # Edit with your entity IDs
+   
+   # Auto-configure the system
+   wget https://raw.githubusercontent.com/JakeTheRabbit/HA-Irrigation-Strategy/main/configure_crop_steering.py
+   python configure_crop_steering.py crop_steering.env
+   ```
+
+5. **Add to configuration.yaml:**
+   ```yaml
+   homeassistant:
+     packages: 
+       crop_steering: !include packages/CropSteering/crop_steering_package.yaml
+   ```
+
+6. **Restart Home Assistant again**
+
+### Option 2: Manual Install
 
 1. **Download the system:**
    ```bash
-   git clone https://github.com/yourusername/HA-Irrigation-Strategy.git
+   git clone https://github.com/JakeTheRabbit/HA-Irrigation-Strategy.git
    cd HA-Irrigation-Strategy
    ```
 
@@ -83,9 +124,12 @@ Professional-grade precision irrigation system for Home Assistant that implement
 
 6. **Restart Home Assistant**
 
-### Option 2: HACS Install (Coming Soon)
+### Option 3: One-Command Install
 
-The system will be available as a HACS custom component for even easier installation.
+```bash
+# Quick install script
+wget -O - https://raw.githubusercontent.com/JakeTheRabbit/HA-Irrigation-Strategy/main/install.sh | bash
+```
 
 ## ⚙️ Configuration
 
