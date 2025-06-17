@@ -93,7 +93,20 @@ Professional-grade precision irrigation system for Home Assistant that implement
 
 7. **Final restart** - Restart Home Assistant to load all entities
 
+8. **Add dashboard card:**
+   ```yaml
+   # Add to your dashboard
+   - !include packages/CropSteering/cards/crop_steering_dashboard.yaml
+   ```
+
 > **✅ Proper Integration**: HACS now downloads everything correctly and automatically installs all files during setup!
+
+### **🔧 Entity Names After Installation**
+
+The integration creates entities in this format:
+- **Integration Entities**: `sensor.crop_steering_current_phase`, `switch.crop_steering_zone_1_enabled`
+- **Package Entities**: `sensor.cs_configured_avg_vwc`, `input_number.cs_p1_target_vwc`
+- **User Sensors**: Your actual VWC/EC sensors (configured via .env file)
 
 ### Option 2: Manual Install
 
