@@ -1,0 +1,887 @@
+# Template Sensor & Switch Helpers for Crop Steering
+# These derive state from the input helpers configured via Blueprints
+
+# Sensor Aggregation
+- sensor:
+    - name: "CS Configured Avg VWC"
+      unique_id: cs_configured_avg_vwc
+      unit_of_measurement: "%"
+      icon: mdi:chart-line-variant
+      state: >
+        {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {% set values = expand(entity_ids) | map(attribute='state') | map('float', none) | reject('none') | list %}
+        {% if values | length > 0 %}
+          {{ (values | sum / values | length) | round(2) }}
+        {% else %}
+          unknown
+        {% endif %}
+      availability: >
+        {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {{ entity_ids | length > 0 and expand(entity_ids) | selectattr('state', '!=', 'unavailable') | selectattr('state', '!=', 'unknown') | list | length > 0 }}
+
+    - name: "CS Configured Avg EC"
+      unique_id: cs_configured_avg_ec
+      unit_of_measurement: "mS/cm" # Or your preferred unit
+      icon: mdi:flash
+      state: >
+        {% set entity_ids = states('input_text.cs_config_ec_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {% set values = expand(entity_ids) | map(attribute='state') | map('float', none) | reject('none') | list %}
+        {% if values | length > 0 %}
+          {{ (values | sum / values | length) | round(2) }}
+        {% else %}
+          unknown
+        {% endif %}
+      availability: >
+        {% set entity_ids = states('input_text.cs_config_ec_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {{ entity_ids | length > 0 and expand(entity_ids) | selectattr('state', '!=', 'unavailable') | selectattr('state', '!=', 'unknown') | list | length > 0 }}
+
+    - name: "CS Configured Min VWC"
+      unique_id: cs_configured_min_vwc
+      unit_of_measurement: "%"
+      icon: mdi:arrow-down-bold
+      state: >
+        {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {% set values = expand(entity_ids) | map(attribute='state') | map('float', none) | reject('none') | list %}
+        {% if values | length > 0 %}
+          {{ values | min | round(2) }}
+        {% else %}
+          unknown
+        {% endif %}
+      availability: >
+        {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {{ entity_ids | length > 0 and expand(entity_ids) | selectattr('state', '!=', 'unavailable') | selectattr('state', '!=', 'unknown') | list | length > 0 }}
+
+    - name: "CS Configured Max VWC"
+      unique_id: cs_configured_max_vwc
+      unit_of_measurement: "%"
+      icon: mdi:arrow-up-bold
+      state: >
+        {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {% set values = expand(entity_ids) | map(attribute='state') | map('float', none) | reject('none') | list %}
+        {% if values | length > 0 %}
+          {{ values | max | round(2) }}
+        {% else %}
+          unknown
+        {% endif %}
+      availability: >
+        {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {{ entity_ids | length > 0 and expand(entity_ids) | selectattr('state', '!=', 'unavailable') | selectattr('state', '!=', 'unknown') | list | length > 0 }}
+
+# Control Switches
+- switch:
+    - name: "CS Configured Pump Switch"
+      unique_id: cs_configured_pump_switch
+      value_template: "{{ is_state(states('input_text.cs_config_pump_switch_entity'), 'on') }}"
+      turn_on:
+        service: switch.turn_on
+        target:
+          entity_id: "{{ states('input_text.cs_config_pump_switch_entity') }}"
+      turn_off:
+        service: switch.turn_off
+        target:
+          entity_id: "{{ states('input_text.cs_config_pump_switch_entity') }}"
+      availability: >
+        {{ states('input_text.cs_config_pump_switch_entity') | length > 0 and states(states('input_text.cs_config_pump_switch_entity')) != 'unavailable' }}
+      icon_template: >
+        {% if is_state(states('input_text.cs_config_pump_switch_entity'), 'on') %}
+          mdi:water-pump
+        {% else %}
+          mdi:water-pump-off
+        {% endif %}
+
+    # Add template switches for zones if direct control is needed by other parts of the package
+    # This example assumes zones are controlled directly via automations using the list from input_text
+    # If you need individual switch entities like `switch.cs_configured_zone_1`, add them similarly to the pump switch.
+
+#==============================================================================
+# TIME TRACKING SENSORS (from crop_steering_improved_sensors.yaml)
+#==============================================================================
+- sensor:
+    - name: "cs_minutes_since_lights_on"
+      unique_id: cs_minutes_since_lights_on
+      state: >
+          {% set lights_on_time = states('input_datetime.cs_lights_on_time') %}
+          {% if lights_on_time is not none and lights_on_time not in ['unknown', 'unavailable', ''] %}
+            {% set lights_on_dt = strptime(lights_on_time, '%H:%M:%S').replace(year=now().year, month=now().month, day=now().day) %}
+            {% set current_dt = now() %}
+            {% if current_dt < lights_on_dt %}
+              {% set lights_on_dt = lights_on_dt - timedelta(days=1) %}
+            {% endif %}
+            {% set diff_seconds = (current_dt - lights_on_dt).total_seconds() %}
+            {{ (diff_seconds / 60) | round(0) }}
+          {% else %}
+            0
+          {% endif %}
+      icon: "mdi:clock-time-eight"
+
+    - name: "cs_minutes_until_lights_off"
+      unique_id: cs_minutes_until_lights_off
+      state: >
+          {% set lights_off_time = states('input_datetime.cs_lights_off_time') %}
+          {% if lights_off_time is not none and lights_off_time not in ['unknown', 'unavailable', ''] %}
+            {% set lights_off_dt = strptime(lights_off_time, '%H:%M:%S').replace(year=now().year, month=now().month, day=now().day) %}
+            {% set current_dt = now() %}
+            {% if current_dt > lights_off_dt %}
+              {% set lights_off_dt = lights_off_dt + timedelta(days=1) %}
+            {% endif %}
+            {% set diff_seconds = (lights_off_dt - current_dt).total_seconds() %}
+            {{ (diff_seconds / 60) | round(0) }}
+          {% else %}
+            0
+          {% endif %}
+      icon: "mdi:clock-time-eight"
+
+    - name: "cs_p3_start_time_calculated"
+      unique_id: cs_p3_start_time_calculated
+      state: >
+          {% set lights_off = states('input_datetime.cs_lights_off_time') %}
+          {% if lights_off is not none and lights_off not in ['unknown', 'unavailable', ''] %}
+            {% set lights_off_dt = strptime(lights_off, '%H:%M:%S') %}
+            {% if is_state('input_select.cs_steering_mode', 'Vegetative') %}
+              {% set minutes_before = states('input_number.cs_p3_veg_last_irrigation') | int(0) %}
+            {% else %}
+              {% set minutes_before = states('input_number.cs_p3_gen_last_irrigation') | int(0) %}
+            {% endif %}
+            {% set p3_start = (lights_off_dt - timedelta(minutes=minutes_before)) %}
+            {{ p3_start.strftime('%H:%M:%S') }}
+          {% else %}
+            {{ now().strftime('%H:%M:%S') }}
+          {% endif %}
+      icon: "mdi:clock-time-four"
+
+#==============================================================================
+# SHOT CALCULATION SENSORS (from crop_steering_improved_sensors.yaml)
+#==============================================================================
+    - name: "cs_p1_current_shot_size_percent"
+      unique_id: cs_p1_current_shot_size_percent
+      state: >
+          {% set initial = states('input_number.cs_p1_initial_shot_size_percent') | float(0) %}
+          {% set increment = states('input_number.cs_p1_shot_size_increment_percent') | float(0) %}
+          {% set shot_count = states('input_number.cs_p1_shot_count') | int(0) %}
+          {% set max_size = states('input_number.cs_p1_max_shot_size_percent') | float(100) %}
+          {% set size_percent = initial + (shot_count * increment) %}
+          {% if size_percent > max_size %}{% set size_percent = max_size %}{% endif %}
+          {{ size_percent }}
+      unit_of_measurement: "%"
+      icon: "mdi:water-percent"
+
+    - name: "cs_p1_shot_duration_seconds"
+      unique_id: cs_p1_shot_duration_seconds
+      state: >
+          {% set dripper_flow_rate = states('input_number.cs_dripper_flow_rate') | float(0) %}
+          {% set substrate_volume = states('input_number.cs_substrate_volume') | float(0) %}
+          {% set shot_size_percent = states('sensor.cs_p1_current_shot_size_percent') | float(0) %}
+          {% if dripper_flow_rate > 0 %}
+            {% set volume_to_add = substrate_volume * (shot_size_percent / 100) %}
+            {% set duration_hours = volume_to_add / dripper_flow_rate %}
+            {{ (duration_hours * 3600) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+      unit_of_measurement: "s"
+      icon: "mdi:timer-sand"
+
+    - name: "cs_p2_shot_duration_seconds"
+      unique_id: cs_p2_shot_duration_seconds
+      state: >
+          {% set dripper_flow_rate = states('input_number.cs_dripper_flow_rate') | float(0) %}
+          {% set substrate_volume = states('input_number.cs_substrate_volume') | float(0) %}
+          {% set shot_size_percent = states('input_number.cs_p2_shot_size_percent') | float(0) %}
+          {% if dripper_flow_rate > 0 %}
+            {% set volume_to_add = substrate_volume * (shot_size_percent / 100) %}
+            {% set duration_hours = volume_to_add / dripper_flow_rate %}
+            {{ (duration_hours * 3600) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+      unit_of_measurement: "s"
+      icon: "mdi:timer-sand"
+
+    - name: "cs_p3_emergency_shot_duration_seconds"
+      unique_id: cs_p3_emergency_shot_duration_seconds
+      state: >
+          {% set dripper_flow_rate = states('input_number.cs_dripper_flow_rate') | float(0) %}
+          {% set substrate_volume = states('input_number.cs_substrate_volume') | float(0) %}
+          {% set shot_size_percent = states('input_number.cs_p3_emergency_shot_size_percent') | float(0) %}
+          {% if dripper_flow_rate > 0 %}
+            {% set volume_to_add = substrate_volume * (shot_size_percent / 100) %}
+            {% set duration_hours = volume_to_add / dripper_flow_rate %}
+            {{ (duration_hours * 3600) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+      unit_of_measurement: "s"
+      icon: "mdi:timer-sand"
+
+    - name: "cs_precise_shot_duration_seconds"
+      unique_id: cs_precise_shot_duration_seconds
+      state: >
+          {% set dripper_flow_rate = states('input_number.cs_dripper_flow_rate') | float(0) %}
+          {% set substrate_volume = states('input_number.cs_substrate_volume') | float(0) %}
+          {% set current_vwc = states('sensor.cs_configured_avg_vwc') | float(0) %}
+          {% set target_vwc = states('input_number.cs_substrate_field_capacity') | float(0) %}
+          {% set retention_factor = states('input_number.cs_substrate_water_retention_factor') | float(1) %}
+          {% if current_vwc >= target_vwc or dripper_flow_rate <= 0 %}
+            0
+          {% else %}
+            {% set vwc_diff = target_vwc - current_vwc %}
+            {% set vwc_percent = vwc_diff / 100 %}
+            {% set water_volume = substrate_volume * vwc_percent * retention_factor %}
+            {% set duration_hours = water_volume / dripper_flow_rate %}
+            {{ (duration_hours * 3600) | round(1) }}
+          {% endif %}
+      unit_of_measurement: "s"
+      icon: "mdi:timer-sand"
+
+#==============================================================================
+# EC MANAGEMENT SENSORS (from crop_steering_improved_sensors.yaml)
+#==============================================================================
+    - name: "cs_current_ec_target"
+      unique_id: cs_current_ec_target
+      state: >
+          {% set phase = states('input_select.cs_crop_steering_phase') %}
+          {% set mode = states('input_select.cs_steering_mode').lower() %}
+          {% if phase == 'P0' and mode == 'vegetative' %}
+            {{ states('input_number.cs_ec_target_veg_p0') | float(0) }}
+          {% elif phase == 'P1' and mode == 'vegetative' %}
+            {{ states('input_number.cs_ec_target_veg_p1') | float(0) }}
+          {% elif phase == 'P2' and mode == 'vegetative' %}
+            {{ states('input_number.cs_ec_target_veg_p2') | float(0) }}
+          {% elif phase == 'P3' and mode == 'vegetative' %}
+            {{ states('input_number.cs_ec_target_veg_p3') | float(0) }}
+          {% elif phase == 'P0' and mode == 'generative' %}
+            {{ states('input_number.cs_ec_target_gen_p0') | float(0) }}
+          {% elif phase == 'P1' and mode == 'generative' %}
+            {{ states('input_number.cs_ec_target_gen_p1') | float(0) }}
+          {% elif phase == 'P2' and mode == 'generative' %}
+            {{ states('input_number.cs_ec_target_gen_p2') | float(0) }}
+          {% elif phase == 'P3' and mode == 'generative' %}
+            {{ states('input_number.cs_ec_target_gen_p3') | float(0) }}
+          {% else %}
+            {{ states('input_number.cs_ec_target_veg_p0') | float(0) }}
+          {% endif %}
+      unit_of_measurement: "mS/cm"
+      icon: "mdi:flash"
+
+    - name: "cs_ec_ratio"
+      unique_id: cs_ec_ratio
+      state: >
+          {% set current_ec = states('sensor.cs_configured_avg_ec') | float(0) %}
+          {% set target_ec = states('sensor.cs_current_ec_target') | float(0) %}
+          {% if target_ec > 0 %}
+            {{ (current_ec / target_ec) | round(2) }}
+          {% else %}
+            1
+          {% endif %}
+      icon: "mdi:division"
+
+    - name: "cs_p2_vwc_threshold_ec_adjusted"
+      unique_id: cs_p2_vwc_threshold_ec_adjusted
+      state: >
+          {% set base_threshold = states('input_number.cs_p2_vwc_threshold') | float(0) %}
+          {% set ec_ratio = states('sensor.cs_ec_ratio') | float(1) %}
+          {% set ec_high_threshold = states('input_number.cs_p2_ec_high_threshold') | float(1.2) %}
+          {% set ec_low_threshold = states('input_number.cs_p2_ec_low_threshold') | float(0.8) %}
+          {% set high_adjustment = states('input_number.cs_p2_vwc_adjustment_high_ec') | float(0) %}
+          {% set low_adjustment = states('input_number.cs_p2_vwc_adjustment_low_ec') | float(0) %}
+          {% if ec_ratio > ec_high_threshold %}
+            {{ (base_threshold + high_adjustment) | round(2) }}
+          {% elif ec_ratio < ec_low_threshold %}
+            {{ (base_threshold + low_adjustment) | round(2) }}
+          {% else %}
+            {{ base_threshold | round(2) }}
+          {% endif %}
+      unit_of_measurement: "%"
+      icon: "mdi:water-percent"
+
+#==============================================================================
+# DYNAMIC DRYBACK TARGETS (from crop_steering_improved_sensors.yaml)
+#==============================================================================
+    - name: "cs_dynamic_p0_dryback"
+      unique_id: cs_dynamic_p0_dryback
+      state: >
+          {% if is_state('input_select.cs_steering_mode', 'Vegetative') %}
+            {{ states('input_number.cs_p0_veg_dryback_target') | float(0) }}
+          {% else %}
+            {{ states('input_number.cs_p0_gen_dryback_target') | float(0) }}
+          {% endif %}
+      unit_of_measurement: "%"
+      icon: "mdi:water-percent"
+
+    - name: "cs_dynamic_p2_dryback"
+      unique_id: cs_dynamic_p2_dryback
+      state: >
+          {% if is_state('input_select.cs_crop_steering_phase', 'P2') %}
+            {{ states('sensor.cs_p2_vwc_threshold_ec_adjusted') | float(0) }}
+          {% else %}
+            {{ states('input_number.cs_p2_vwc_threshold') | float(0) }}
+          {% endif %}
+      unit_of_measurement: "%"
+      icon: "mdi:water-percent"
+
+    - name: "cs_dynamic_p3_dryback"
+      unique_id: cs_dynamic_p3_dryback
+      state: >
+          {{ states('input_number.cs_p3_emergency_vwc_threshold') | float(0) }}
+      unit_of_measurement: "%"
+      icon: "mdi:water-percent"
+
+#==============================================================================
+# SYSTEM STATUS SENSORS (from crop_steering_improved_sensors.yaml)
+#==============================================================================
+    - name: "cs_current_phase_description"
+      unique_id: cs_current_phase_description
+      state: >
+          {% set phase = states('input_select.cs_crop_steering_phase') %}
+          {% if phase == 'P0' %}
+            Pre-Irrigation Dry Back ({{ states('sensor.cs_minutes_since_lights_on') | int(0) }} min since lights-on)
+          {% elif phase == 'P1' %}
+            Ramp-Up Phase (Shot {{ states('input_number.cs_p1_shot_count') | int(0) }}/{{ states('input_number.cs_p1_max_shots') | int(0) }})
+          {% elif phase == 'P2' %}
+            Maintenance Phase (EC Ratio: {{ states('sensor.cs_ec_ratio') | float(0) }})
+          {% elif phase == 'P3' %}
+            Overnight Dry Back ({{ states('sensor.cs_minutes_until_lights_off') | int(0) }} min until lights-off)
+          {% else %}
+            Unknown Phase
+          {% endif %}
+      icon: >
+          {% set phase = states('input_select.cs_crop_steering_phase') %}
+          {% if phase == 'P0' %}
+            mdi:weather-sunset-up
+          {% elif phase == 'P1' %}
+            mdi:trending-up
+          {% elif phase == 'P2' %}
+            mdi:chart-bell-curve
+          {% elif phase == 'P3' %}
+            mdi:weather-sunset-down
+          {% else %}
+            mdi:help-circle
+          {% endif %}
+
+    - name: "cs_irrigation_status"
+      unique_id: cs_irrigation_status
+      state: >
+          {% if is_state('switch.cs_configured_pump_switch', 'on') %}
+            {% set phase = states('input_select.cs_crop_steering_phase') %}
+            {% if phase == 'P1' %}
+              Ramp-Up Shot {{ states('input_number.cs_p1_shot_count') | int(0) }} ({{ states('sensor.cs_p1_shot_duration_seconds') | float(0) }}s)
+            {% elif phase == 'P2' %}
+              Maintenance Irrigation ({{ states('sensor.cs_p2_shot_duration_seconds') | float(0) }}s)
+            {% elif phase == 'P3' %}
+              Emergency Irrigation ({{ states('sensor.cs_p3_emergency_shot_duration_seconds') | float(0) }}s)
+            {% else %}
+              Irrigating
+            {% endif %}
+          {% else %}
+            Idle
+          {% endif %}
+      icon: >
+          {% if is_state('switch.cs_configured_pump_switch', 'on') %}
+            mdi:water-pump
+          {% else %}
+            mdi:water-pump-off
+          {% endif %}
+
+#==============================================================================
+# DRYBACK TRACKING SENSORS (from crop_steering_dryback_tracking.yaml)
+#==============================================================================
+- sensor:
+    - name: "dryback_in_progress"
+      unique_id: cs_dryback_in_progress
+      state: >
+        {% set last_peak = states('sensor.dryback_last_peak_time') %}
+        {% set last_valley = states('sensor.dryback_last_valley_time') %}
+        {% if last_peak != 'unknown' and last_peak != '' %}
+          {% if last_valley == 'unknown' or last_valley == '' %}
+            true
+          {% else %}
+            {% if last_peak is string and last_valley is string and last_peak|length > 0 and last_valley|length > 0 %}
+              {% if as_timestamp(last_peak) > as_timestamp(last_valley) %}
+                true
+              {% else %}
+                false
+              {% endif %}
+            {% else %}
+              false
+            {% endif %}
+          {% endif %}
+        {% else %}
+          false
+        {% endif %}
+      icon: >
+        {% if is_state('sensor.dryback_in_progress', 'true') %}
+          mdi:trending-down
+        {% else %}
+          mdi:trending-neutral
+        {% endif %}
+
+    - name: "dryback_current_percentage"
+      unique_id: cs_dryback_current_percentage
+      state: >
+        {% if is_state('sensor.dryback_in_progress', 'true') %}
+          {% set peak_vwc = states('sensor.dryback_last_peak_vwc') | float(0) %}
+          {% set current_vwc = states('sensor.cs_configured_avg_vwc') | float(0) %}
+          {% if peak_vwc > 0 %}
+            {% set percentage = ((peak_vwc - current_vwc) / peak_vwc * 100) | round(1) %}
+            {% if percentage > 0 %}{{ percentage }}{% else %}0{% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "%"
+      state_class: measurement
+      icon: "mdi:water-percent"
+
+    - name: "dryback_current_duration"
+      unique_id: cs_dryback_current_duration
+      state: >
+        {% if is_state('sensor.dryback_in_progress', 'true') %}
+          {% set peak_time = states('sensor.dryback_last_peak_time') %}
+          {% if peak_time != 'unknown' and peak_time != '' and peak_time is string and peak_time|length > 0 %}
+            {% set duration_seconds = now().timestamp() - as_timestamp(peak_time)|default(0) %}
+            {% if duration_seconds > 0 %}
+              {{ (duration_seconds / 60) | round(0) }}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "min"
+      state_class: measurement
+      icon: "mdi:timer"
+
+    - name: "Potential VWC Peak"
+      unique_id: cs_dryback_potential_peak
+      state: >
+        {% set current = states('sensor.cs_configured_avg_vwc') | float(0) %}
+        {% set previous = this.attributes.get('previous_vwc', 0) | float(0) %}
+        {% set threshold = states('input_number.cs_dryback_peak_detection_threshold') | float(0.5) %}
+        {% if previous > current and (previous - current) > threshold and not is_state('sensor.dryback_in_progress', 'true') %}
+          {{ previous }}
+        {% else %}
+          {{ this.state | default(0) }}
+        {% endif %}
+      unit_of_measurement: "%"
+      attributes:
+        previous_vwc: >
+          {{ states('sensor.cs_configured_avg_vwc') | float(0) }}
+
+    - name: "Last Dryback Peak Time"
+      unique_id: cs_dryback_last_peak_time
+      state: >
+        {% set potential_peak = states('sensor.cs_dryback_potential_peak') %}
+        {% set last_peak_vwc = states('sensor.cs_dryback_last_peak_vwc') %}
+        {% if potential_peak != 'unknown' and potential_peak != last_peak_vwc %}
+          {{ now().isoformat() }}
+        {% else %}
+          {{ this.state | default('') }}
+        {% endif %}
+      device_class: timestamp
+
+    - name: "Last Dryback Peak VWC"
+      unique_id: cs_dryback_last_peak_vwc
+      state: >
+        {% set potential_peak = states('sensor.cs_dryback_potential_peak') %}
+        {% if potential_peak != 'unknown' and potential_peak != this.state %}
+          {{ potential_peak }}
+        {% else %}
+          {{ this.state | default(0) }}
+        {% endif %}
+      unit_of_measurement: "%"
+      state_class: measurement
+
+    - name: "Potential VWC Valley"
+      unique_id: cs_dryback_potential_valley
+      state: >
+        {% set current = states('sensor.cs_configured_avg_vwc') | float(0) %}
+        {% set previous = this.attributes.get('previous_vwc', 0) | float(0) %}
+        {% set threshold = states('input_number.cs_dryback_valley_detection_threshold') | float(0.5) %}
+        {% if previous < current and (current - previous) > threshold and is_state('sensor.dryback_in_progress', 'true') %}
+          {{ current }}
+        {% else %}
+          {{ this.state | default(0) }}
+        {% endif %}
+      unit_of_measurement: "%"
+      attributes:
+        previous_vwc: >
+          {{ states('sensor.cs_configured_avg_vwc') | float(0) }}
+
+    - name: "Last Dryback Valley Time"
+      unique_id: cs_dryback_last_valley_time
+      state: >
+        {% set potential_valley = states('sensor.cs_dryback_potential_valley') %}
+        {% set last_valley_vwc = states('sensor.cs_dryback_last_valley_vwc') %}
+        {% if potential_valley != 'unknown' and potential_valley != last_valley_vwc %}
+          {{ now().isoformat() }}
+        {% else %}
+          {{ this.state | default('') }}
+        {% endif %}
+      device_class: timestamp
+
+    - name: "Last Dryback Valley VWC"
+      unique_id: cs_dryback_last_valley_vwc
+      state: >
+        {% set potential_valley = states('sensor.cs_dryback_potential_valley') %}
+        {% if potential_valley != 'unknown' and potential_valley != this.state %}
+          {{ potential_valley }}
+        {% else %}
+          {{ this.state | default(0) }}
+        {% endif %}
+      unit_of_measurement: "%"
+      state_class: measurement
+
+    - name: "dryback_last_percentage"
+      friendly_name: "Last Dryback Percentage"
+      value_template: >
+        {% set peak = states('sensor.dryback_last_peak_vwc') | float(0) %}
+        {% set valley = states('sensor.dryback_last_valley_vwc') | float(0) %}
+        {% if peak > 0 and valley > 0 and valley < peak %}
+          {{ ((peak - valley) / peak * 100) | round(1) }}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "%"
+      icon_template: "mdi:water-percent"
+
+    - name: "dryback_last_duration"
+      friendly_name: "Last Dryback Duration"
+      value_template: >
+        {% set peak_time = states('sensor.dryback_last_peak_time') %}
+        {% set valley_time = states('sensor.dryback_last_valley_time') %}
+        {% if peak_time != 'unknown' and valley_time != 'unknown' and peak_time != '' and valley_time != '' and peak_time is string and valley_time is string %}
+          {% if peak_time|length > 0 and valley_time|length > 0 %}
+            {% set duration_seconds = as_timestamp(valley_time)|default(0) - as_timestamp(peak_time)|default(0) %}
+            {% if duration_seconds > 0 %}
+              {{ (duration_seconds / 60) | round(0) }}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "min"
+      icon_template: "mdi:timer"
+
+    - name: "dryback_avg_percentage_24h"
+      friendly_name: "Average Dryback Percentage (24h)"
+      value_template: >
+        {% set history = states('sensor.dryback_history') %}
+        {% if history != 'unknown' and history != '' and history is string and history|length > 0 %}
+          {% if history|first == '[' %}
+            {% set data = history | from_json(default=[]) %}
+            {% set recent = data | selectattr('timestamp', 'gt', (now().timestamp() - 86400)) | list %}
+            {% if recent | length > 0 %}
+              {% set percentages = recent | map(attribute='percentage') | map('float', 0) | list %}
+              {% if percentages | length > 0 %}
+                {{ (percentages | sum / percentages | length) | round(1) }}
+              {% else %}
+                0
+              {% endif %}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "%"
+      icon_template: "mdi:water-percent"
+
+    - name: "dryback_avg_duration_24h"
+      friendly_name: "Average Dryback Duration (24h)"
+      value_template: >
+        {% set history = states('sensor.dryback_history') %}
+        {% if history != 'unknown' and history != '' and history is string and history|length > 0 %}
+          {% if history|first == '[' %}
+            {% set data = history | from_json(default=[]) %}
+            {% set recent = data | selectattr('timestamp', 'gt', (now().timestamp() - 86400)) | list %}
+            {% if recent | length > 0 %}
+              {% set durations = recent | map(attribute='duration') | map('float', 0) | list %}
+              {% if durations | length > 0 %}
+                {{ (durations | sum / durations | length) | round(0) }}
+              {% else %}
+                0
+              {% endif %}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "min"
+      icon_template: "mdi:timer"
+
+    - name: "dryback_count_24h"
+      friendly_name: "Dryback Count (24h)"
+      value_template: >
+        {% set history = states('sensor.dryback_history') %}
+        {% if history != 'unknown' and history != '' and history is string and history|length > 0 %}
+          {% if history|first == '[' %}
+            {% set data = history | from_json(default=[]) %}
+            {% set recent = data | selectattr('timestamp', 'gt', (now().timestamp() - 86400)) | list %}
+            {{ recent | length }}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      icon_template: "mdi:counter"
+
+    - name: "dryback_history"
+      friendly_name: "Dryback History"
+      state: "{{ states('input_text.cs_dryback_history') }}"
+
+#==============================================================================
+# ZONE CONTROL SENSORS (from crop_steering_zone_controls.yaml)
+#==============================================================================
+- binary_sensor:
+    - name: "virtual_irrigation_pump"
+      friendly_name: "Virtual Irrigation Pump"
+      value_template: >
+        {% set pump_entity = states('input_text.cs_config_pump_switch_entity') %}
+        {% set zone_switches = states('input_text.cs_config_zone_switch_entities').split(',') | map('trim') | reject('==', '') | list %}
+        {% set zone1_switch = zone_switches[0] if zone_switches | length > 0 else none %}
+        {% set zone2_switch = zone_switches[1] if zone_switches | length > 1 else none %}
+        {% set zone3_switch = zone_switches[2] if zone_switches | length > 2 else none %}
+        {% if is_state(pump_entity, 'on') and
+              ( (zone1_switch is not none and is_state(zone1_switch, 'on')) or
+                (zone2_switch is not none and is_state(zone2_switch, 'on')) or
+                (zone3_switch is not none and is_state(zone3_switch, 'on')) ) %}
+          on
+        {% else %}
+          off
+        {% endif %}
+      device_class: running
+      availability: >
+        {{ states('input_text.cs_config_pump_switch_entity') not in ['unknown', 'unavailable', ''] and
+           states('input_text.cs_config_zone_switch_entities') not in ['unknown', 'unavailable', ''] }}
+
+- sensor:
+    - name: "active_zones_count"
+      unique_id: cs_active_zones_count
+      state: >
+        {% set count = 0 %}
+        {% if is_state('input_boolean.cs_zone_1_enabled', 'on') %}
+          {% set count = count + 1 %}
+        {% endif %}
+        {% if is_state('input_boolean.cs_zone_2_enabled', 'on') %}
+          {% set count = count + 1 %}
+        {% endif %}
+        {% if is_state('input_boolean.cs_zone_3_enabled', 'on') %}
+          {% set count = count + 1 %}
+        {% endif %}
+        {{ count }}
+      state_class: measurement
+      icon: "mdi:counter"
+
+    - name: "zone_1_vwc"
+      unique_id: cs_zone_1_vwc
+      state: >
+        {% set front_entity = states('input_text.cs_config_z1_vwc_front') %}
+        {% set back_entity = states('input_text.cs_config_z1_vwc_back') %}
+        {% if front_entity and front_entity != 'unknown' and front_entity != '' %}
+          {% set front = states(front_entity) | float(0) %}
+        {% else %}
+          {% set front = 0 %}
+        {% endif %}
+        {% if back_entity and back_entity != 'unknown' and back_entity != '' %}
+          {% set back = states(back_entity) | float(0) %}
+        {% else %}
+          {% set back = 0 %}
+        {% endif %}
+        {% if front > 0 and back > 0 %}
+          {{ ((front + back) / 2) | round(1) }}
+        {% elif front > 0 %}
+          {{ front | round(1) }}
+        {% elif back > 0 %}
+          {{ back | round(1) }}
+        {% else %}
+          unknown
+        {% endif %}
+      unit_of_measurement: "%"
+      state_class: measurement
+      icon: "mdi:water-percent"
+      availability: >
+        {{ states('input_text.cs_config_z1_vwc_front') | length > 0 or
+           states('input_text.cs_config_z1_vwc_back') | length > 0 }}
+
+    - name: "Zone 2 VWC"
+      unique_id: cs_zone_2_vwc
+      state: >
+        {% set front_entity = states('input_text.cs_config_z2_vwc_front') %}
+        {% set back_entity = states('input_text.cs_config_z2_vwc_back') %}
+        {% set front = states(front_entity) | float(0) if front_entity else 0 %}
+        {% set back = states(back_entity) | float(0) if back_entity else 0 %}
+        {% if front > 0 and back > 0 %}
+          {{ ((front + back) / 2) | round(1) }}
+        {% elif front > 0 %}
+          {{ front | round(1) }}
+        {% elif back > 0 %}
+          {{ back | round(1) }}
+        {% else %}
+          unknown
+        {% endif %}
+      unit_of_measurement: "%"
+      state_class: measurement
+      device_class: moisture
+      icon_template: "mdi:water-percent"
+      availability: >
+        {{ states('input_text.cs_config_z2_vwc_front') | length > 0 or
+           states('input_text.cs_config_z2_vwc_back') | length > 0 }}
+
+    - name: "zone_3_vwc"
+      friendly_name: "Zone 3 VWC"
+      value_template: >
+        {% set front_entity = states('input_text.cs_config_z3_vwc_front') %}
+        {% set back_entity = states('input_text.cs_config_z3_vwc_back') %}
+        {% set front = states(front_entity) | float(0) if front_entity else 0 %}
+        {% set back = states(back_entity) | float(0) if back_entity else 0 %}
+        {% if front > 0 and back > 0 %}
+          {{ ((front + back) / 2) | round(1) }}
+        {% elif front > 0 %}
+          {{ front | round(1) }}
+        {% elif back > 0 %}
+          {{ back | round(1) }}
+        {% else %}
+          unknown
+        {% endif %}
+      unit_of_measurement: "%"
+      icon_template: "mdi:water-percent"
+      availability: >
+        {{ states('input_text.cs_config_z3_vwc_front') | length > 0 or
+           states('input_text.cs_config_z3_vwc_back') | length > 0 }}
+
+    - name: "zone_1_ec"
+      friendly_name: "Zone 1 EC"
+      value_template: >
+        {% set front_entity = states('input_text.cs_config_z1_ec_front') %}
+        {% set back_entity = states('input_text.cs_config_z1_ec_back') %}
+        {% set front = states(front_entity) | float(0) if front_entity else 0 %}
+        {% set back = states(back_entity) | float(0) if back_entity else 0 %}
+        {% if front > 0 and back > 0 %}
+          {{ ((front + back) / 2) | round(2) }}
+        {% elif front > 0 %}
+          {{ front | round(2) }}
+        {% elif back > 0 %}
+          {{ back | round(2) }}
+        {% else %}
+          unknown
+        {% endif %}
+      unit_of_measurement: "mS/cm"
+      icon_template: "mdi:flash"
+      availability: >
+        {{ states('input_text.cs_config_z1_ec_front') | length > 0 or
+           states('input_text.cs_config_z1_ec_back') | length > 0 }}
+
+    - name: "zone_2_ec"
+      friendly_name: "Zone 2 EC"
+      value_template: >
+        {% set front_entity = states('input_text.cs_config_z2_ec_front') %}
+        {% set back_entity = states('input_text.cs_config_z2_ec_back') %}
+        {% set front = states(front_entity) | float(0) if front_entity else 0 %}
+        {% set back = states(back_entity) | float(0) if back_entity else 0 %}
+        {% if front > 0 and back > 0 %}
+          {{ ((front + back) / 2) | round(2) }}
+        {% elif front > 0 %}
+          {{ front | round(2) }}
+        {% elif back > 0 %}
+          {{ back | round(2) }}
+        {% else %}
+          unknown
+        {% endif %}
+      unit_of_measurement: "mS/cm"
+      icon_template: "mdi:flash"
+      availability: >
+        {{ states('input_text.cs_config_z2_ec_front') | length > 0 or
+           states('input_text.cs_config_z2_ec_back') | length > 0 }}
+
+    - name: "zone_3_ec"
+      friendly_name: "Zone 3 EC"
+      value_template: >
+        {% set front_entity = states('input_text.cs_config_z3_ec_front') %}
+        {% set back_entity = states('input_text.cs_config_z3_ec_back') %}
+        {% set front = states(front_entity) | float(0) if front_entity else 0 %}
+        {% set back = states(back_entity) | float(0) if back_entity else 0 %}
+        {% if front > 0 and back > 0 %}
+          {{ ((front + back) / 2) | round(2) }}
+        {% elif front > 0 %}
+          {{ front | round(2) }}
+        {% elif back > 0 %}
+          {{ back | round(2) }}
+        {% else %}
+          unknown
+        {% endif %}
+      unit_of_measurement: "mS/cm"
+      icon_template: "mdi:flash"
+      availability: >
+        {{ states('input_text.cs_config_z3_ec_front') | length > 0 or
+           states('input_text.cs_config_z3_ec_back') | length > 0 }}
+
+    - name: "zone_1_dryback_percentage"
+      friendly_name: "Zone 1 Dryback Percentage"
+      value_template: >
+        {% if is_state('sensor.dryback_in_progress', 'true') %}
+          {% set peak_vwc = states('sensor.dryback_last_peak_vwc') | float(0) %}
+          {% set current_vwc = states('sensor.zone_1_vwc') | float(0) %}
+          {% if peak_vwc > 0 %}
+            {% set percentage = ((peak_vwc - current_vwc) / peak_vwc * 100) | round(1) %}
+            {% if percentage > 0 %}{{ percentage }}{% else %}0{% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "%"
+      icon_template: "mdi:water-percent"
+
+    - name: "zone_2_dryback_percentage"
+      friendly_name: "Zone 2 Dryback Percentage"
+      value_template: >
+        {% if is_state('sensor.dryback_in_progress', 'true') %}
+          {% set peak_vwc = states('sensor.dryback_last_peak_vwc') | float(0) %}
+          {% set current_vwc = states('sensor.zone_2_vwc') | float(0) %}
+          {% if peak_vwc > 0 %}
+            {% set percentage = ((peak_vwc - current_vwc) / peak_vwc * 100) | round(1) %}
+            {% if percentage > 0 %}{{ percentage }}{% else %}0{% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "%"
+      icon_template: "mdi:water-percent"
+
+    - name: "zone_3_dryback_percentage"
+      friendly_name: "Zone 3 Dryback Percentage"
+      value_template: >
+        {% if is_state('sensor.dryback_in_progress', 'true') %}
+          {% set peak_vwc = states('sensor.dryback_last_peak_vwc') | float(0) %}
+          {% set current_vwc = states('sensor.zone_3_vwc') | float(0) %}
+          {% if peak_vwc > 0 %}
+            {% set percentage = ((peak_vwc - current_vwc) / peak_vwc * 100) | round(1) %}
+            {% if percentage > 0 %}{{ percentage }}{% else %}0{% endif %}
+          {% else %}
+            0
+          {% endif %}
+        {% else %}
+          0
+        {% endif %}
+      unit_of_measurement: "%"
+      icon_template: "mdi:water-percent"

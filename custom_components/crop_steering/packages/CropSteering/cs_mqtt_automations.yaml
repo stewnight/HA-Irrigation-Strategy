@@ -1,0 +1,132 @@
+# MQTT Automations for Crop Steering
+# These automations handle MQTT publishing and command processing
+# Include this file separately in configuration.yaml to avoid circular references
+
+# Regular data publishing
+- alias: "CS MQTT Data Publisher"
+  id: cs_mqtt_data_publisher
+  trigger:
+    - platform: time_pattern
+      seconds: "/30"  # Every 30 seconds
+  condition:
+    - condition: state
+      entity_id: input_boolean.cs_mqtt_enabled
+      state: 'on'
+    - condition: template
+      value_template: >
+        {% set interval = states('input_number.cs_mqtt_publish_interval') | int(60) %}
+        {% set last_publish = states('sensor.cs_mqtt_last_publish') %}
+        {% if last_publish == 'unknown' %}
+          true
+        {% else %}
+          {% set last_time = as_timestamp(last_publish) | default(0) %}
+          {% set current_time = now().timestamp() %}
+          {{ (current_time - last_time) >= interval }}
+        {% endif %}
+  action:
+    - service: mqtt.publish
+      data:
+        topic: "{{ states('input_text.cs_mqtt_data_topic') }}"
+        payload: "{{ states('sensor.cs_mqtt_data_payload') }}"
+        retain: false
+        qos: 1
+    - service: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.cs_mqtt_last_publish_time
+      data:
+        datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+# Alert publishing
+- alias: "CS MQTT Alert Publisher"
+  id: cs_mqtt_alert_publisher
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.cs_sensor_fusion_alert
+      to: 'on'
+    - platform: state
+      entity_id: binary_sensor.cs_data_quality_warning
+      to: 'on'
+  condition:
+    - condition: state
+      entity_id: input_boolean.cs_mqtt_enabled
+      state: 'on'
+    - condition: state
+      entity_id: input_boolean.cs_mqtt_alerts_enabled
+      state: 'on'
+  action:
+    - service: mqtt.publish
+      data:
+        topic: "{{ states('input_text.cs_mqtt_alert_topic') }}"
+        payload: "{{ states('sensor.cs_mqtt_alert_payload') }}"
+        retain: true
+        qos: 2
+
+# Command listener
+- alias: "CS MQTT Command Listener"
+  id: cs_mqtt_command_listener
+  trigger:
+    - platform: mqtt
+      topic: "{{ states('input_text.cs_mqtt_command_topic') }}"
+  condition:
+    - condition: state
+      entity_id: input_boolean.cs_mqtt_enabled
+      state: 'on'
+    - condition: state
+      entity_id: input_boolean.cs_mqtt_commands_enabled
+      state: 'on'
+  action:
+    - choose:
+        # Emergency stop
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.payload_json.command == 'emergency_stop' }}"
+          sequence:
+            - service: input_boolean.turn_off
+              target:
+                entity_id: 
+                  - input_boolean.cs_zone_1_enabled
+                  - input_boolean.cs_zone_2_enabled
+                  - input_boolean.cs_zone_3_enabled
+            - service: mqtt.publish
+              data:
+                topic: "{{ states('input_text.cs_mqtt_response_topic') }}"
+                payload: '{"status": "emergency_stop_executed", "timestamp": {{ now().timestamp() | round(0) }}}'
+
+        # Change mode
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.payload_json.command == 'set_mode' }}"
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.cs_steering_mode
+              data:
+                option: "{{ trigger.payload_json.mode }}"
+            - service: mqtt.publish
+              data:
+                topic: "{{ states('input_text.cs_mqtt_response_topic') }}"
+                payload: '{"status": "mode_changed", "new_mode": "{{ trigger.payload_json.mode }}", "timestamp": {{ now().timestamp() | round(0) }}}'
+
+        # Manual irrigation
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.payload_json.command == 'manual_irrigation' }}"
+          sequence:
+            - service: input_boolean.turn_on
+              target:
+                entity_id: "input_boolean.cs_zone_{{ trigger.payload_json.zone | default(1) }}_enabled"
+            - delay:
+                seconds: "{{ trigger.payload_json.duration | default(30) }}"
+            - service: input_boolean.turn_off
+              target:
+                entity_id: "input_boolean.cs_zone_{{ trigger.payload_json.zone | default(1) }}_enabled"
+            - service: mqtt.publish
+              data:
+                topic: "{{ states('input_text.cs_mqtt_response_topic') }}"
+                payload: '{"status": "manual_irrigation_completed", "zone": {{ trigger.payload_json.zone | default(1) }}, "duration": {{ trigger.payload_json.duration | default(30) }}, "timestamp": {{ now().timestamp() | round(0) }}}'
+
+      default:
+        - service: mqtt.publish
+          data:
+            topic: "{{ states('input_text.cs_mqtt_response_topic') }}"
+            payload: '{"status": "unknown_command", "received": "{{ trigger.payload }}", "timestamp": {{ now().timestamp() | round(0) }}}'

@@ -50,56 +50,50 @@ Professional-grade precision irrigation system for Home Assistant that implement
 **Install via HACS Custom Repository:**
 
 1. **Open HACS in Home Assistant:**
-   - Go to **HACS** > **Automation**
+   - Go to **HACS** > **Integrations**
    - Click the **three dots menu (⋮)** in the top right
    - Select **"Custom repositories"**
 
 2. **Add this repository:**
    ```
    Repository: https://github.com/JakeTheRabbit/HA-Irrigation-Strategy
-   Category: AppDaemon
+   Category: Integration
    ```
    - Click **"ADD"**
    - Wait for HACS to validate the repository
 
-3. **Download the system:**
+3. **Install the integration:**
    - Search for **"Crop Steering System"** in HACS
    - Click **"Download"**
    - Choose the latest version
-   - Files will be downloaded to `/config/appdaemon/apps/`
+   - **Restart Home Assistant**
 
-4. **Run the automatic setup script:**
-   ```bash
-   # Download and run the HACS post-install script
-   wget -O - https://raw.githubusercontent.com/JakeTheRabbit/HA-Irrigation-Strategy/main/hacs_install.sh | bash
-   ```
-   
-   **OR manually move files:**
-   ```bash
-   # Move packages to correct location
-   mv /config/appdaemon/apps/HA-Irrigation-Strategy/packages/CropSteering /config/packages/
-   
-   # Keep AppDaemon files in place (if AppDaemon installed)
-   mv /config/appdaemon/apps/HA-Irrigation-Strategy/appdaemon/* /config/appdaemon/ 2>/dev/null || true
-   
-   # Copy configuration files
-   cp /config/appdaemon/apps/HA-Irrigation-Strategy/crop_steering.env /config/
-   cp /config/appdaemon/apps/HA-Irrigation-Strategy/configure_crop_steering.py /config/
-   ```
+4. **Set up the integration:**
+   - Go to **Settings** > **Devices & Services**
+   - Click **"Add Integration"**
+   - Search for **"Crop Steering System"**
+   - Choose **"Automatic Setup"** (Recommended) or **"Manual Configuration"**
+   - Follow the setup wizard
 
-5. **Configure your system:**
+5. **Configure your entities (if using Automatic Setup):**
    ```bash
-   # Edit configuration with your entity IDs
-   cp /config/crop_steering.env.example /config/my_crop_steering.env
-   nano /config/my_crop_steering.env
+   # Edit the configuration file with your entity IDs
+   nano /config/crop_steering.env.example
    
    # Auto-configure the system
-   python /config/configure_crop_steering.py /config/my_crop_steering.env
+   python /config/configure_crop_steering.py /config/crop_steering.env.example
    ```
 
-6. **Restart Home Assistant**
+6. **Add package to configuration.yaml:**
+   ```yaml
+   homeassistant:
+     packages: 
+       crop_steering: !include packages/CropSteering/crop_steering_package.yaml
+   ```
 
-> **⚠️ HACS Limitation**: HACS downloads all files but places them in `/config/appdaemon/apps/`. The script above automatically moves everything to the correct locations.
+7. **Final restart** - Restart Home Assistant to load all entities
+
+> **✅ Proper Integration**: HACS now downloads everything correctly and automatically installs all files during setup!
 
 ### Option 2: Manual Install
 

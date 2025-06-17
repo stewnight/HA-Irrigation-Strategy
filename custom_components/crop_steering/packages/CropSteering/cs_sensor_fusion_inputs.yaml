@@ -1,0 +1,111 @@
+# Input helpers for Advanced Sensor Fusion System
+
+input_number:
+  # Sensor fusion configuration
+  cs_outlier_detection_sensitivity:
+    name: "Outlier Detection Sensitivity"
+    min: 0.5
+    max: 3.0
+    step: 0.1
+    initial: 1.5
+    icon: mdi:tune-variant
+    
+  cs_sensor_confidence_threshold:
+    name: "Sensor Confidence Threshold"
+    min: 50
+    max: 95
+    step: 5
+    unit_of_measurement: "%"
+    initial: 70
+    icon: mdi:check-circle
+
+  cs_fusion_update_interval:
+    name: "Fusion Update Interval"
+    min: 10
+    max: 300
+    step: 10
+    unit_of_measurement: "s"
+    initial: 30
+    icon: mdi:timer
+
+  # Sensor health monitoring
+  cs_sensor_variance_alert_threshold:
+    name: "Sensor Variance Alert Threshold"
+    min: 1.0
+    max: 10.0
+    step: 0.5
+    unit_of_measurement: "%"
+    initial: 5.0
+    icon: mdi:alert-triangle
+
+  cs_max_sensor_age:
+    name: "Maximum Sensor Reading Age"
+    min: 1
+    max: 60
+    step: 1
+    unit_of_measurement: "min"
+    initial: 10
+    icon: mdi:clock-alert
+
+input_boolean:
+  # Sensor fusion features
+  cs_sensor_fusion_enabled:
+    name: "Enable Advanced Sensor Fusion"
+    initial: on
+    icon: mdi:merge
+
+  cs_outlier_detection_enabled:
+    name: "Enable Outlier Detection"
+    initial: on
+    icon: mdi:radar
+
+  cs_predictive_readings_enabled:
+    name: "Enable Predictive Readings"
+    initial: off
+    icon: mdi:crystal-ball
+
+  cs_automatic_zone_selection:
+    name: "Enable Automatic Zone Selection"
+    initial: off
+    icon: mdi:auto-fix
+
+  cs_sensor_health_alerts:
+    name: "Enable Sensor Health Alerts"
+    initial: on
+    icon: mdi:heart-pulse
+
+input_select:
+  # Fusion algorithm selection
+  cs_fusion_algorithm:
+    name: "Sensor Fusion Algorithm"
+    options:
+      - "Median (Robust)"
+      - "Weighted Average"
+      - "Kalman Filter"
+      - "Simple Average"
+    initial: "Median (Robust)"
+    icon: mdi:algorithm
+
+  cs_zone_selection_strategy:
+    name: "Zone Selection Strategy"
+    options:
+      - "Lowest VWC First"
+      - "Round Robin"
+      - "All Zones"
+      - "Manual Override"
+    initial: "Lowest VWC First"
+    icon: mdi:strategy
+
+input_text:
+  # Sensor reliability tracking
+  cs_sensor_reliability_log:
+    name: "Sensor Reliability Log (JSON)"
+    max: 255
+    initial: "{}"
+    icon: mdi:clipboard-check
+
+  cs_outlier_history:
+    name: "Outlier Detection History (JSON)"
+    max: 255
+    initial: "[]"
+    icon: mdi:alert-outline

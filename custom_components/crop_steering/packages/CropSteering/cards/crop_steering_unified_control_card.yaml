@@ -1,0 +1,374 @@
+# Crop Steering Unified Control Dashboard
+# Complete control interface for the crop steering system
+# All entities updated to match the current package structure
+
+type: vertical-stack
+cards:
+  # System Status & Quick Controls
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: entities
+        title: 🌱 System Status & Control
+        show_header_toggle: false
+        entities:
+          - entity: input_select.cs_crop_steering_phase
+            name: Current Phase
+          - entity: input_select.cs_steering_mode
+            name: Steering Mode
+          - entity: sensor.cs_irrigation_status
+            name: Irrigation Status
+          - type: divider
+          - entity: input_boolean.cs_zone_1_enabled
+            name: Zone 1 Active
+          - entity: input_boolean.cs_zone_2_enabled
+            name: Zone 2 Active
+          - entity: input_boolean.cs_zone_3_enabled
+            name: Zone 3 Active
+          - type: divider
+          - entity: input_datetime.cs_lights_on_time
+            name: Lights On Time
+          - entity: input_datetime.cs_lights_off_time
+            name: Lights Off Time
+
+      - type: entities
+        title: 📊 Key Sensor Readings
+        show_header_toggle: false
+        entities:
+          - entity: sensor.cs_configured_avg_vwc
+            name: Average VWC
+            icon: mdi:water-percent
+          - entity: sensor.cs_configured_min_vwc
+            name: Minimum VWC
+          - entity: sensor.cs_configured_max_vwc
+            name: Maximum VWC
+          - type: divider
+          - entity: sensor.cs_configured_avg_ec
+            name: Average EC
+            icon: mdi:flash
+          - entity: sensor.cs_current_ec_target
+            name: EC Target
+          - entity: sensor.cs_ec_ratio
+            name: EC Ratio
+          - type: divider
+          - entity: sensor.cs_minutes_since_lights_on
+            name: Time Since Lights On
+          - entity: sensor.cs_minutes_until_lights_off
+            name: Time Until Lights Off
+
+  # Sensor Data by Zone
+  - type: entities
+    title: 🏷️ Zone Sensor Readings
+    show_header_toggle: false
+    entities:
+      - type: section
+        label: Zone 1 Sensors
+      - entity: sensor.cs_zone_1_vwc
+        name: Zone 1 VWC (Combined)
+        icon: mdi:water-percent
+      - entity: sensor.cs_zone_1_ec
+        name: Zone 1 EC (Combined)
+        icon: mdi:flash
+      - type: section
+        label: Zone 2 Sensors
+      - entity: sensor.cs_zone_2_vwc
+        name: Zone 2 VWC (Combined)
+        icon: mdi:water-percent
+      - entity: sensor.cs_zone_2_ec
+        name: Zone 2 EC (Combined)
+        icon: mdi:flash
+      - type: section
+        label: Zone 3 Sensors
+      - entity: sensor.cs_zone_3_vwc
+        name: Zone 3 VWC (Combined)
+        icon: mdi:water-percent
+      - entity: sensor.cs_zone_3_ec
+        name: Zone 3 EC (Combined)
+        icon: mdi:flash
+
+  # Phase Settings in Tabs
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: entities
+        title: 🔄 P0 & P1 Phase Settings
+        show_header_toggle: false
+        entities:
+          - type: section
+            label: "P0: Pre-Irrigation Dry Back"
+          - entity: input_number.cs_p0_veg_dryback_target
+            name: Veg Dryback Target (%)
+          - entity: input_number.cs_p0_gen_dryback_target
+            name: Gen Dryback Target (%)
+          - entity: input_number.cs_p0_min_wait_time
+            name: Min Wait Time (min)
+          - entity: input_number.cs_p0_max_wait_time
+            name: Max Wait Time (min)
+          - type: section
+            label: "P1: Ramp-Up Phase"
+          - entity: input_number.cs_p1_initial_shot_size_percent
+            name: Initial Shot Size (%)
+          - entity: input_number.cs_p1_shot_size_increment_percent
+            name: Shot Size Increment (%)
+          - entity: input_number.cs_p1_max_shot_size_percent
+            name: Max Shot Size (%)
+          - entity: input_number.cs_p1_time_between_shots
+            name: Time Between Shots (min)
+          - entity: input_number.cs_p1_target_vwc
+            name: Target VWC (%)
+          - entity: input_number.cs_p1_max_shots
+            name: Max Shots
+          - entity: input_number.cs_p1_min_shots
+            name: Min Shots
+
+      - type: entities
+        title: ⚡ P2 & P3 Phase Settings
+        show_header_toggle: false
+        entities:
+          - type: section
+            label: "P2: Maintenance Phase"
+          - entity: input_number.cs_p2_shot_size_percent
+            name: Shot Size (%)
+          - entity: input_number.cs_p2_vwc_threshold
+            name: VWC Threshold (%)
+          - entity: input_number.cs_p2_veg_frequency
+            name: Veg Frequency (min)
+          - entity: input_number.cs_p2_gen_frequency
+            name: Gen Frequency (min)
+          - entity: input_number.cs_p2_ec_high_threshold
+            name: EC High Threshold
+          - entity: input_number.cs_p2_ec_low_threshold
+            name: EC Low Threshold
+          - entity: input_number.cs_p2_vwc_adjustment_high_ec
+            name: VWC Adj High EC (%)
+          - entity: input_number.cs_p2_vwc_adjustment_low_ec
+            name: VWC Adj Low EC (%)
+          - type: section
+            label: "P3: Overnight Dry Back"
+          - entity: input_datetime.cs_p3_start_time
+            name: P3 Start Time
+          - entity: input_number.cs_p3_veg_last_irrigation
+            name: Veg Last Irrigation (min)
+          - entity: input_number.cs_p3_gen_last_irrigation
+            name: Gen Last Irrigation (min)
+          - entity: input_number.cs_p3_emergency_vwc_threshold
+            name: Emergency VWC (%)
+          - entity: input_number.cs_p3_emergency_shot_size_percent
+            name: Emergency Shot Size (%)
+
+  # EC Targets
+  - type: entities
+    title: 🎯 EC Target Settings (mS/cm)
+    show_header_toggle: false
+    entities:
+      - type: section
+        label: Vegetative Mode EC Targets
+      - entity: input_number.cs_ec_target_veg_p0
+        name: P0 Veg EC Target
+      - entity: input_number.cs_ec_target_veg_p1
+        name: P1 Veg EC Target
+      - entity: input_number.cs_ec_target_veg_p2
+        name: P2 Veg EC Target
+      - entity: input_number.cs_ec_target_veg_p3
+        name: P3 Veg EC Target
+      - type: section
+        label: Generative Mode EC Targets
+      - entity: input_number.cs_ec_target_gen_p0
+        name: P0 Gen EC Target
+      - entity: input_number.cs_ec_target_gen_p1
+        name: P1 Gen EC Target
+      - entity: input_number.cs_ec_target_gen_p2
+        name: P2 Gen EC Target
+      - entity: input_number.cs_ec_target_gen_p3
+        name: P3 Gen EC Target
+      - type: section
+        label: Special Modes
+      - entity: input_number.cs_ec_target_flush
+        name: Flush EC Target
+
+  # Advanced Settings
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: entities
+        title: 🔧 Substrate & Hardware Settings
+        show_header_toggle: false
+        entities:
+          - entity: input_number.cs_substrate_size
+            name: Substrate Size (L)
+          - entity: input_number.cs_substrate_volume
+            name: Substrate Volume (L)
+          - entity: input_number.cs_substrate_field_capacity
+            name: Field Capacity (%)
+          - entity: input_number.cs_substrate_saturation_point
+            name: Saturation Point (%)
+          - entity: input_number.cs_substrate_critical_vwc
+            name: Critical VWC (%)
+          - entity: input_number.cs_substrate_max_ec
+            name: Max EC (mS/cm)
+          - entity: input_number.cs_substrate_water_retention_factor
+            name: Water Retention Factor
+          - type: divider
+          - entity: input_number.cs_dripper_flow_rate
+            name: Dripper Flow Rate (L/h)
+          - entity: input_select.cs_aggregation_method
+            name: Sensor Aggregation Method
+
+      - type: entities
+        title: 📈 Dryback Detection Settings
+        show_header_toggle: false
+        entities:
+          - entity: input_number.cs_dryback_peak_detection_threshold
+            name: Peak Detection Threshold (%)
+          - entity: input_number.cs_dryback_valley_detection_threshold
+            name: Valley Detection Threshold (%)
+          - entity: input_number.cs_dryback_min_duration
+            name: Min Duration (min)
+          - entity: input_number.cs_dryback_min_percentage
+            name: Min Percentage (%)
+          - entity: input_number.cs_dryback_history_max_entries
+            name: History Max Entries
+          - type: divider
+          - entity: input_number.cs_min_valid_vwc
+            name: Min Valid VWC (%)
+          - entity: input_number.cs_max_valid_vwc
+            name: Max Valid VWC (%)
+          - entity: input_number.cs_min_valid_ec
+            name: Min Valid EC (mS/cm)
+          - entity: input_number.cs_max_valid_ec
+            name: Max Valid EC (mS/cm)
+
+  # Analytics & Performance
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: entities
+        title: 📊 Analytics & Performance
+        show_header_toggle: false
+        entities:
+          - entity: sensor.cs_irrigation_efficiency_24h
+            name: Irrigation Efficiency (24h)
+            icon: mdi:percent
+          - entity: sensor.cs_total_water_used_24h
+            name: Water Used (24h)
+            icon: mdi:water
+          - entity: sensor.cs_total_shots_24h
+            name: Total Shots (24h)
+            icon: mdi:counter
+          - entity: sensor.dryback_avg_percentage_24h
+            name: Avg Dryback (24h)
+            icon: mdi:trending-down
+          - entity: sensor.dryback_avg_duration_24h
+            name: Avg Dryback Duration (24h)
+            icon: mdi:timer
+          - entity: sensor.dryback_count_24h
+            name: Dryback Count (24h)
+            icon: mdi:counter
+
+      - type: entities
+        title: 🚨 System Health & Alerts
+        show_header_toggle: false
+        entities:
+          - entity: sensor.cs_sensor_health_score
+            name: Sensor Health Score
+            icon: mdi:heart-pulse
+          - entity: binary_sensor.cs_sensor_fusion_alert
+            name: Sensor Fusion Alert
+            icon: mdi:alert-circle
+          - entity: binary_sensor.cs_data_quality_warning
+            name: Data Quality Warning
+            icon: mdi:alert-triangle
+          - entity: sensor.cs_optimization_recommendation
+            name: Optimization Recommendation
+            icon: mdi:lightbulb
+          - entity: sensor.cs_growth_stage_recommendation
+            name: Growth Stage Recommendation
+            icon: mdi:sprout
+
+  # Multi-Crop Support
+  - type: entities
+    title: 🌿 Multi-Crop Profile Settings
+    show_header_toggle: false
+    entities:
+      - entity: input_select.cs_active_crop_profile
+        name: Active Crop Profile
+        icon: mdi:leaf
+      - entity: sensor.cs_crop_profile_status
+        name: Profile Status
+      - entity: sensor.cs_crop_profile_recommendation
+        name: Profile Recommendation
+      - entity: binary_sensor.cs_crop_profile_mismatch_alert
+        name: Profile Mismatch Alert
+        icon: mdi:alert
+
+  # MQTT Remote Monitoring (if enabled)
+  - type: entities
+    title: 🌐 MQTT Remote Monitoring
+    show_header_toggle: false
+    entities:
+      - entity: input_boolean.cs_mqtt_enabled
+        name: MQTT Enabled
+        icon: mdi:wifi
+      - entity: sensor.cs_mqtt_status
+        name: MQTT Status
+      - entity: input_number.cs_mqtt_publish_interval
+        name: Publish Interval (sec)
+      - entity: input_boolean.cs_mqtt_alerts_enabled
+        name: MQTT Alerts Enabled
+      - entity: input_boolean.cs_mqtt_commands_enabled
+        name: MQTT Commands Enabled
+
+  # Historical Charts
+  - type: grid
+    columns: 1
+    square: false
+    cards:
+      - type: history-graph
+        title: 📈 VWC Monitoring (24h)
+        hours_to_show: 24
+        refresh_interval: 0
+        entities:
+          - entity: sensor.cs_configured_avg_vwc
+            name: Average VWC
+          - entity: sensor.cs_configured_min_vwc
+            name: Min VWC
+          - entity: sensor.cs_configured_max_vwc
+            name: Max VWC
+          - entity: sensor.cs_z1_front_vwc
+            name: Zone 1 Front
+          - entity: sensor.cs_z1_back_vwc
+            name: Zone 1 Back
+          - entity: sensor.cs_z2_front_vwc
+            name: Zone 2 Front
+          - entity: sensor.cs_z2_back_vwc
+            name: Zone 2 Back
+          - entity: sensor.cs_z3_front_vwc
+            name: Zone 3 Front
+          - entity: sensor.cs_z3_back_vwc
+            name: Zone 3 Back
+
+      - type: history-graph
+        title: ⚡ EC Monitoring (24h)
+        hours_to_show: 24
+        refresh_interval: 0
+        entities:
+          - entity: sensor.cs_configured_avg_ec
+            name: Average EC
+          - entity: sensor.cs_current_ec_target
+            name: Target EC
+          - entity: sensor.cs_z1_front_ec
+            name: Zone 1 Front
+          - entity: sensor.cs_z1_back_ec
+            name: Zone 1 Back
+          - entity: sensor.cs_z2_front_ec
+            name: Zone 2 Front
+          - entity: sensor.cs_z2_back_ec
+            name: Zone 2 Back
+          - entity: sensor.cs_z3_front_ec
+            name: Zone 3 Front
+          - entity: sensor.cs_z3_back_ec
+            name: Zone 3 Back

@@ -1,0 +1,154 @@
+# Example AppDaemon apps.yaml configuration for Crop Steering
+# Copy this to your AppDaemon apps.yaml or include it if you're using a split config
+
+crop_steering:
+  module: crop_steering_app
+  class: CropSteeringApp  # Fixed: Must match class name in Python file
+  
+  # Configuration Helper Entity Mappings (input_text entities)
+  config_helpers:
+    config_vwc_sensor_entities: input_text.cs_config_vwc_sensor_entities
+    config_ec_sensor_entities: input_text.cs_config_ec_sensor_entities
+    config_pump_switch_entity: input_text.cs_config_pump_switch_entity
+    config_zone_switch_entities: input_text.cs_config_zone_switch_entities
+    config_waste_switch_entity: input_text.cs_config_waste_switch_entity
+    # Zone-specific sensor configurations
+    config_z1_vwc_front: input_text.cs_config_z1_vwc_front
+    config_z1_vwc_back: input_text.cs_config_z1_vwc_back
+    config_z1_ec_front: input_text.cs_config_z1_ec_front
+    config_z1_ec_back: input_text.cs_config_z1_ec_back
+    config_z2_vwc_front: input_text.cs_config_z2_vwc_front
+    config_z2_vwc_back: input_text.cs_config_z2_vwc_back
+    config_z2_ec_front: input_text.cs_config_z2_ec_front
+    config_z2_ec_back: input_text.cs_config_z2_ec_back
+    config_z3_vwc_front: input_text.cs_config_z3_vwc_front
+    config_z3_vwc_back: input_text.cs_config_z3_vwc_back
+    config_z3_ec_front: input_text.cs_config_z3_ec_front
+    config_z3_ec_back: input_text.cs_config_z3_ec_back
+  
+  # Setting Helper Entity Mappings (input_select, input_datetime, input_boolean)
+  setting_helpers:
+    phase_select: input_select.cs_crop_steering_phase
+    mode_select: input_select.cs_steering_mode
+    lights_on_time: input_datetime.cs_lights_on_time
+    lights_off_time: input_datetime.cs_lights_off_time
+    ec_stacking_enabled: input_boolean.cs_ec_stacking_enabled
+    ec_stacking_active_phases: input_text.cs_ec_stacking_active_phases
+    active_zones_select: input_select.cs_active_irrigation_zones
+    # Zone enable/disable booleans
+    zone1_enabled_boolean: input_boolean.cs_zone_1_enabled
+    zone2_enabled_boolean: input_boolean.cs_zone_2_enabled
+    zone3_enabled_boolean: input_boolean.cs_zone_3_enabled
+    dryback_history_input: input_text.cs_dryback_history
+  
+  # Input Number Helper Mappings (all numerical parameters)
+  input_numbers:
+    # Shot counters
+    p1_shot_count: input_number.cs_p1_shot_count
+    p2_shot_count: input_number.cs_p2_shot_count
+    p3_shot_count: input_number.cs_p3_shot_count
+    # Irrigation settings
+    dripper_flow_rate: input_number.cs_dripper_flow_rate
+    # P0 settings
+    p0_veg_dryback_target: input_number.cs_p0_veg_dryback_target
+    p0_gen_dryback_target: input_number.cs_p0_gen_dryback_target
+    p0_max_wait_time: input_number.cs_p0_max_wait_time
+    p0_min_wait_time: input_number.cs_p0_min_wait_time
+    # P1 settings
+    p1_initial_shot_size_percent: input_number.cs_p1_initial_shot_size_percent
+    p1_shot_size_increment_percent: input_number.cs_p1_shot_size_increment_percent
+    p1_time_between_shots: input_number.cs_p1_time_between_shots
+    p1_target_vwc: input_number.cs_p1_target_vwc
+    p1_max_shots: input_number.cs_p1_max_shots
+    p1_min_shots: input_number.cs_p1_min_shots
+    p1_max_shot_size_percent: input_number.cs_p1_max_shot_size_percent
+    # P2 settings
+    p2_shot_size_percent: input_number.cs_p2_shot_size_percent
+    p2_veg_frequency: input_number.cs_p2_veg_frequency
+    p2_gen_frequency: input_number.cs_p2_gen_frequency
+    p2_vwc_threshold: input_number.cs_p2_vwc_threshold
+    p2_ec_high_threshold: input_number.cs_p2_ec_high_threshold
+    p2_ec_low_threshold: input_number.cs_p2_ec_low_threshold
+    p2_vwc_adjustment_high_ec: input_number.cs_p2_vwc_adjustment_high_ec
+    p2_vwc_adjustment_low_ec: input_number.cs_p2_vwc_adjustment_low_ec
+    # P3 settings
+    p3_veg_last_irrigation: input_number.cs_p3_veg_last_irrigation
+    p3_gen_last_irrigation: input_number.cs_p3_gen_last_irrigation
+    p3_emergency_vwc_threshold: input_number.cs_p3_emergency_vwc_threshold
+    p3_emergency_shot_size_percent: input_number.cs_p3_emergency_shot_size_percent
+    # EC targets
+    ec_target_veg_p0: input_number.cs_ec_target_veg_p0
+    ec_target_veg_p1: input_number.cs_ec_target_veg_p1
+    ec_target_veg_p2: input_number.cs_ec_target_veg_p2
+    ec_target_veg_p3: input_number.cs_ec_target_veg_p3
+    ec_target_gen_p0: input_number.cs_ec_target_gen_p0
+    ec_target_gen_p1: input_number.cs_ec_target_gen_p1
+    ec_target_gen_p2: input_number.cs_ec_target_gen_p2
+    ec_target_gen_p3: input_number.cs_ec_target_gen_p3
+    ec_target_flush: input_number.cs_ec_target_flush
+    # Substrate settings
+    substrate_volume: input_number.cs_substrate_volume
+    substrate_field_capacity: input_number.cs_substrate_field_capacity
+    substrate_saturation_point: input_number.cs_substrate_saturation_point
+    substrate_critical_vwc: input_number.cs_substrate_critical_vwc
+    substrate_max_ec: input_number.cs_substrate_max_ec
+    substrate_water_retention_factor: input_number.cs_substrate_water_retention_factor
+    # Sensor validation
+    min_valid_vwc: input_number.cs_min_valid_vwc
+    max_valid_vwc: input_number.cs_max_valid_vwc
+    min_valid_ec: input_number.cs_min_valid_ec
+    max_valid_ec: input_number.cs_max_valid_ec
+    # Dryback detection
+    dryback_peak_detection_threshold: input_number.cs_dryback_peak_detection_threshold
+    dryback_valley_detection_threshold: input_number.cs_dryback_valley_detection_threshold
+    dryback_min_duration: input_number.cs_dryback_min_duration
+    dryback_min_percentage: input_number.cs_dryback_min_percentage
+    # EC stacking
+    cs_ec_stacking_target_ratio: input_number.cs_ec_stacking_target_ratio
+    cs_ec_stacking_vwc_reduction: input_number.cs_ec_stacking_vwc_reduction
+  
+  # Output Sensor Entity IDs (sensors created by this AppDaemon app)
+  output_sensors:
+    # Aggregation sensors
+    avg_vwc: sensor.cs_appdaemon_avg_vwc
+    avg_ec: sensor.cs_appdaemon_avg_ec
+    min_vwc: sensor.cs_appdaemon_min_vwc
+    max_vwc: sensor.cs_appdaemon_max_vwc
+    # Time-based sensors
+    minutes_since_lights_on: sensor.cs_appdaemon_minutes_since_lights_on
+    minutes_until_lights_off: sensor.cs_appdaemon_minutes_until_lights_off
+    # Calculation sensors
+    ec_ratio: sensor.cs_appdaemon_ec_ratio
+    current_ec_target: sensor.cs_appdaemon_current_ec_target
+    p1_shot_duration_seconds: sensor.cs_appdaemon_p1_shot_duration_seconds
+    p2_shot_duration_seconds: sensor.cs_appdaemon_p2_shot_duration_seconds
+    p3_emergency_shot_duration_seconds: sensor.cs_appdaemon_p3_emergency_shot_duration_seconds
+    p2_vwc_threshold_adjusted: sensor.cs_appdaemon_p2_vwc_threshold_adjusted
+    # Dynamic dryback sensors
+    dynamic_p0_dryback: sensor.cs_appdaemon_dynamic_p0_dryback
+    dynamic_p2_dryback: sensor.cs_appdaemon_dynamic_p2_dryback
+    dynamic_p3_dryback: sensor.cs_appdaemon_dynamic_p3_dryback
+    # Status sensors
+    phase_description: sensor.cs_appdaemon_phase_description
+    irrigation_status: sensor.cs_appdaemon_irrigation_status
+    # Zone sensors
+    z1_vwc: sensor.cs_appdaemon_zone_1_vwc
+    z2_vwc: sensor.cs_appdaemon_zone_2_vwc
+    z3_vwc: sensor.cs_appdaemon_zone_3_vwc
+    z1_ec: sensor.cs_appdaemon_zone_1_ec
+    z2_ec: sensor.cs_appdaemon_zone_2_ec
+    z3_ec: sensor.cs_appdaemon_zone_3_ec
+    # Dryback sensors
+    dryback_in_progress: binary_sensor.cs_appdaemon_dryback_in_progress
+    dryback_current_percentage: sensor.cs_appdaemon_dryback_current_percentage
+    dryback_current_duration: sensor.cs_appdaemon_dryback_current_duration
+    dryback_last_percentage: sensor.cs_appdaemon_dryback_last_percentage
+    dryback_last_duration: sensor.cs_appdaemon_dryback_last_duration
+    dryback_last_peak_vwc: sensor.cs_appdaemon_dryback_last_peak_vwc
+    dryback_last_peak_time: sensor.cs_appdaemon_dryback_last_peak_time
+    dryback_last_valley_vwc: sensor.cs_appdaemon_dryback_last_valley_vwc
+    dryback_last_valley_time: sensor.cs_appdaemon_dryback_last_valley_time
+  
+  # Optional: Notification service (uncomment and configure as needed)
+  # notification_service: notify.mobile_app_your_device
+  # notification_service: notify.persistent_notification

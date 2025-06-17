@@ -1,0 +1,303 @@
+# ML-Based Analytics and Predictive Modeling for Crop Steering
+# Uses pattern recognition and simple ML algorithms for predictions
+
+template:
+  - sensor:
+      # DRYBACK PATTERN PREDICTION
+      - name: "cs_predicted_dryback_completion"
+        unique_id: cs_predicted_dryback_completion
+        state: >
+          {% if is_state('sensor.dryback_in_progress', 'true') %}
+            {% set current_vwc = states('sensor.cs_configured_avg_vwc') | float(0) %}
+            {% set peak_vwc = states('sensor.dryback_last_peak_vwc') | float(0) %}
+            {% set peak_time = states('sensor.dryback_last_peak_time') %}
+            {% set target_dryback = states('sensor.cs_dynamic_p0_dryback') | float(0) %}
+            
+            {% if peak_vwc > 0 and peak_time != 'unknown' and target_dryback > 0 %}
+              {% set current_percentage = ((peak_vwc - current_vwc) / peak_vwc * 100) %}
+              {% set target_percentage = target_dryback %}
+              {% set elapsed_minutes = states('sensor.dryback_current_duration') | float(0) %}
+              
+              {% if current_percentage > 0 and elapsed_minutes > 5 %}
+                {# Linear prediction based on current rate #}
+                {% set rate_per_minute = current_percentage / elapsed_minutes %}
+                {% set remaining_percentage = target_percentage - current_percentage %}
+                {% if rate_per_minute > 0 and remaining_percentage > 0 %}
+                  {% set predicted_remaining_minutes = remaining_percentage / rate_per_minute %}
+                  {% set predicted_completion = now().timestamp() + (predicted_remaining_minutes * 60) %}
+                  {{ predicted_completion | timestamp_local }}
+                {% else %}
+                  {{ (now().timestamp() + 1800) | timestamp_local }}
+                {% endif %}
+              {% else %}
+                {{ (now().timestamp() + 3600) | timestamp_local }}
+              {% endif %}
+            {% else %}
+              unknown
+            {% endif %}
+          {% else %}
+            unknown
+          {% endif %}
+        device_class: timestamp
+        attributes:
+          confidence: >
+            {% if is_state('sensor.dryback_in_progress', 'true') %}
+              {% set elapsed_minutes = states('sensor.dryback_current_duration') | float(0) %}
+              {% set history_count = states('sensor.dryback_count_24h') | float(0) %}
+              {% if elapsed_minutes > 30 and history_count > 2 %}
+                high
+              {% elif elapsed_minutes > 15 and history_count > 1 %}
+                medium
+              {% else %}
+                low
+              {% endif %}
+            {% else %}
+              none
+            {% endif %}
+          prediction_method: "linear_regression"
+          data_points_used: "{{ states('sensor.dryback_current_duration') | float(0) }}"
+
+      # IRRIGATION TIMING OPTIMIZER
+      - name: "cs_optimal_irrigation_timing"
+        unique_id: cs_optimal_irrigation_timing
+        state: >
+          {% set current_phase = states('input_select.cs_crop_steering_phase') %}
+          {% set current_vwc = states('sensor.cs_configured_avg_vwc') | float(0) %}
+          {% set historical_efficiency = states('sensor.cs_irrigation_efficiency_24h') | float(0) %}
+          {% set time_since_last = states('sensor.cs_time_since_last_irrigation') | float(0) %}
+          
+          {% if current_phase == 'P1' %}
+            {% set interval = states('input_number.cs_p1_time_between_shots') | float(15) %}
+            {% if time_since_last >= interval %}
+              immediate
+            {% else %}
+              {{ (now().timestamp() + ((interval - time_since_last) * 60)) | timestamp_local }}
+            {% endif %}
+          {% elif current_phase == 'P2' %}
+            {% set mode = states('input_select.cs_steering_mode') %}
+            {% set base_interval = states('input_number.cs_p2_veg_frequency') | float(60) if mode == 'Vegetative' else states('input_number.cs_p2_gen_frequency') | float(120) %}
+            {% set threshold = states('sensor.cs_p2_vwc_threshold_ec_adjusted') | float(25) %}
+            
+            {# Adaptive timing based on VWC trend and efficiency #}
+            {% if current_vwc < threshold * 0.9 %}
+              immediate
+            {% elif current_vwc < threshold %}
+              {% set adjusted_interval = base_interval * 0.8 if historical_efficiency < 70 else base_interval %}
+              {{ (now().timestamp() + (adjusted_interval * 60)) | timestamp_local }}
+            {% else %}
+              {% set adjusted_interval = base_interval * 1.2 if historical_efficiency > 90 else base_interval %}
+              {{ (now().timestamp() + (adjusted_interval * 60)) | timestamp_local }}
+            {% endif %}
+          {% else %}
+            scheduled
+          {% endif %}
+        device_class: timestamp
+        attributes:
+          recommendation_reason: >
+            {% set current_phase = states('input_select.cs_crop_steering_phase') %}
+            {% set current_vwc = states('sensor.cs_configured_avg_vwc') | float(0) %}
+            {% set historical_efficiency = states('sensor.cs_irrigation_efficiency_24h') | float(0) %}
+            
+            {% if current_phase == 'P1' %}
+              P1 interval-based timing
+            {% elif current_phase == 'P2' %}
+              {% set threshold = states('sensor.cs_p2_vwc_threshold_ec_adjusted') | float(25) %}
+              {% if current_vwc < threshold * 0.9 %}
+                VWC critically low, immediate irrigation needed
+              {% elif current_vwc < threshold %}
+                VWC below threshold
+              {% elif historical_efficiency < 70 %}
+                Low efficiency, increased frequency
+              {% elif historical_efficiency > 90 %}
+                High efficiency, extended interval
+              {% else %}
+                Standard interval
+              {% endif %}
+            {% else %}
+              Phase-based scheduling
+            {% endif %}
+          efficiency_factor: "{{ states('sensor.cs_irrigation_efficiency_24h') }}%"
+
+      # GROWTH STAGE PREDICTOR
+      - name: "cs_growth_stage_predictor"
+        unique_id: cs_growth_stage_predictor
+        state: >
+          {% set avg_dryback = states('sensor.dryback_avg_percentage_24h') | float(0) %}
+          {% set avg_ec = states('sensor.cs_configured_avg_ec') | float(0) %}
+          {% set water_usage_trend = states('sensor.cs_water_usage_trend_7d') | float(0) %}
+          {% set current_mode = states('input_select.cs_steering_mode') %}
+          
+          {# Simple decision tree based on multiple factors #}
+          {% if avg_dryback < 2 and avg_ec < 1.3 and water_usage_trend > 10 %}
+            early_vegetative
+          {% elif avg_dryback >= 2 and avg_dryback <= 4 and avg_ec >= 1.3 and avg_ec <= 2.0 %}
+            late_vegetative
+          {% elif avg_dryback > 4 and avg_dryback <= 8 and avg_ec > 2.0 %}
+            early_generative
+          {% elif avg_dryback > 8 and water_usage_trend < 5 %}
+            late_generative
+          {% else %}
+            {% if current_mode == 'Vegetative' %}
+              vegetative_monitoring
+            {% else %}
+              generative_monitoring
+            {% endif %}
+          {% endif %}
+        icon: "mdi:seedling"
+        attributes:
+          confidence_score: >
+            {% set dryback_score = 0 %}
+            {% set ec_score = 0 %}
+            {% set trend_score = 0 %}
+            
+            {% set avg_dryback = states('sensor.dryback_avg_percentage_24h') | float(0) %}
+            {% set avg_ec = states('sensor.cs_configured_avg_ec') | float(0) %}
+            {% set water_usage_trend = states('sensor.cs_water_usage_trend_7d') | float(0) %}
+            
+            {# Score based on how well metrics align with prediction #}
+            {% set prediction = states('sensor.cs_growth_stage_predictor') %}
+            {% if prediction == 'early_vegetative' %}
+              {% set dryback_score = 100 if avg_dryback < 2 else (100 - (avg_dryback * 25)) %}
+              {% set ec_score = 100 if avg_ec < 1.3 else (100 - ((avg_ec - 1.3) * 50)) %}
+              {% set trend_score = 100 if water_usage_trend > 10 else (water_usage_trend * 10) %}
+            {% elif prediction == 'late_vegetative' %}
+              {% set dryback_score = 100 if avg_dryback >= 2 and avg_dryback <= 4 else (100 - (abs(avg_dryback - 3) * 25)) %}
+              {% set ec_score = 100 if avg_ec >= 1.3 and avg_ec <= 2.0 else (100 - (abs(avg_ec - 1.65) * 30)) %}
+            {% endif %}
+            
+            {{ ((dryback_score + ec_score + trend_score) / 3) | round(0) }}
+          key_indicators:
+            dryback_24h: "{{ states('sensor.dryback_avg_percentage_24h') }}%"
+            ec_avg: "{{ states('sensor.cs_configured_avg_ec') }} mS/cm"
+            water_trend: "{{ states('sensor.cs_water_usage_trend_7d') }}%"
+          recommendation: >
+            {% set prediction = states('sensor.cs_growth_stage_predictor') %}
+            {% set current_mode = states('input_select.cs_steering_mode') %}
+            {% if prediction == 'early_vegetative' and current_mode != 'Vegetative' %}
+              Consider switching to Vegetative mode
+            {% elif prediction in ['early_generative', 'late_generative'] and current_mode != 'Generative' %}
+              Consider switching to Generative mode
+            {% else %}
+              Current mode aligned with prediction
+            {% endif %}
+
+      # WATER USAGE TREND ANALYZER
+      - name: "cs_water_usage_trend_7d"
+        unique_id: cs_water_usage_trend_7d
+        state: >
+          {% set today_usage = states('sensor.cs_total_water_used_24h') | float(0) %}
+          {% set history = states('sensor.cs_water_usage_history_7d') %}
+          
+          {% if history and history != 'unknown' and history != '' %}
+            {% set data = history | from_json(default=[]) %}
+            {% if data | length >= 3 %}
+              {% set recent_avg = (data[-3:] | map(attribute='usage') | sum) / 3 %}
+              {% set older_avg = (data[:-3] | map(attribute='usage') | sum) / (data[:-3] | length) if data[:-3] | length > 0 else recent_avg %}
+              {% if older_avg > 0 %}
+                {{ ((recent_avg - older_avg) / older_avg * 100) | round(1) }}
+              {% else %}
+                0
+              {% endif %}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: "mdi:trending-up"
+        attributes:
+          trend_direction: >
+            {% set trend = states('sensor.cs_water_usage_trend_7d') | float(0) %}
+            {% if trend > 5 %}
+              increasing
+            {% elif trend < -5 %}
+              decreasing
+            {% else %}
+              stable
+            {% endif %}
+          confidence: >
+            {% set history = states('sensor.cs_water_usage_history_7d') %}
+            {% if history and history != 'unknown' %}
+              {% set data = history | from_json(default=[]) %}
+              {% if data | length >= 7 %}
+                high
+              {% elif data | length >= 3 %}
+                medium
+              {% else %}
+                low
+              {% endif %}
+            {% else %}
+              none
+            {% endif %}
+
+      # ANOMALY DETECTION
+      - name: "cs_anomaly_detection_score"
+        unique_id: cs_anomaly_detection_score
+        state: >
+          {% set current_vwc = states('sensor.cs_configured_avg_vwc') | float(0) %}
+          {% set current_ec = states('sensor.cs_configured_avg_ec') | float(0) %}
+          {% set current_efficiency = states('sensor.cs_irrigation_efficiency_24h') | float(0) %}
+          
+          {# Get historical averages for comparison #}
+          {% set avg_vwc_7d = states('sensor.cs_avg_vwc_7d') | float(current_vwc) %}
+          {% set avg_ec_7d = states('sensor.cs_avg_ec_7d') | float(current_ec) %}
+          {% set avg_efficiency_7d = states('sensor.cs_avg_efficiency_7d') | float(current_efficiency) %}
+          
+          {% set vwc_deviation = (abs(current_vwc - avg_vwc_7d) / avg_vwc_7d * 100) if avg_vwc_7d > 0 else 0 %}
+          {% set ec_deviation = (abs(current_ec - avg_ec_7d) / avg_ec_7d * 100) if avg_ec_7d > 0 else 0 %}
+          {% set efficiency_deviation = (abs(current_efficiency - avg_efficiency_7d) / avg_efficiency_7d * 100) if avg_efficiency_7d > 0 else 0 %}
+          
+          {# Calculate composite anomaly score #}
+          {% set anomaly_score = (vwc_deviation + ec_deviation + efficiency_deviation) / 3 %}
+          {{ anomaly_score | round(1) }}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: >
+          {% set score = states('sensor.cs_anomaly_detection_score') | float(0) %}
+          {% if score < 10 %}
+            mdi:check-circle
+          {% elif score < 25 %}
+            mdi:alert-circle
+          {% else %}
+            mdi:alert-octagon
+          {% endif %}
+        attributes:
+          alert_level: >
+            {% set score = states('sensor.cs_anomaly_detection_score') | float(0) %}
+            {% if score < 10 %}
+              normal
+            {% elif score < 25 %}
+              warning
+            {% elif score < 50 %}
+              critical
+            {% else %}
+              emergency
+            {% endif %}
+          vwc_deviation: "{{ ((abs(states('sensor.cs_configured_avg_vwc') | float(0) - states('sensor.cs_avg_vwc_7d') | float(states('sensor.cs_configured_avg_vwc') | float(0))) / states('sensor.cs_avg_vwc_7d') | float(1) * 100) if states('sensor.cs_avg_vwc_7d') | float(0) > 0 else 0) | round(1) }}%"
+          ec_deviation: "{{ ((abs(states('sensor.cs_configured_avg_ec') | float(0) - states('sensor.cs_avg_ec_7d') | float(states('sensor.cs_configured_avg_ec') | float(0))) / states('sensor.cs_avg_ec_7d') | float(1) * 100) if states('sensor.cs_avg_ec_7d') | float(0) > 0 else 0) | round(1) }}%"
+          efficiency_deviation: "{{ ((abs(states('sensor.cs_irrigation_efficiency_24h') | float(0) - states('sensor.cs_avg_efficiency_7d') | float(states('sensor.cs_irrigation_efficiency_24h') | float(0))) / states('sensor.cs_avg_efficiency_7d') | float(1) * 100) if states('sensor.cs_avg_efficiency_7d') | float(0) > 0 else 0) | round(1) }}%"
+
+  # BINARY SENSORS FOR ML ALERTS
+  - binary_sensor:
+      - name: "cs_ml_prediction_alert"
+        unique_id: cs_ml_prediction_alert
+        state: >
+          {% set anomaly_score = states('sensor.cs_anomaly_detection_score') | float(0) %}
+          {% set prediction_confidence = state_attr('sensor.cs_predicted_dryback_completion', 'confidence') %}
+          {{ anomaly_score > 25 or prediction_confidence == 'low' }}
+        device_class: problem
+        attributes:
+          anomaly_score: "{{ states('sensor.cs_anomaly_detection_score') }}%"
+          prediction_confidence: "{{ state_attr('sensor.cs_predicted_dryback_completion', 'confidence') }}"
+          alert_reason: >
+            {% set anomaly_score = states('sensor.cs_anomaly_detection_score') | float(0) %}
+            {% set prediction_confidence = state_attr('sensor.cs_predicted_dryback_completion', 'confidence') %}
+            {% if anomaly_score > 25 %}
+              High anomaly detection score: {{ anomaly_score }}%
+            {% elif prediction_confidence == 'low' %}
+              Low prediction confidence detected
+            {% else %}
+              No ML alerts active
+            {% endif %}

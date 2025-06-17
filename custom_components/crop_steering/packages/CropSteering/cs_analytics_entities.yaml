@@ -1,0 +1,282 @@
+# Advanced Analytics Engine for Crop Steering
+# Provides comprehensive statistical analysis and performance metrics
+
+template:
+  - sensor:
+      # IRRIGATION EFFICIENCY METRICS
+      - name: "cs_irrigation_efficiency_24h"
+        unique_id: cs_irrigation_efficiency_24h
+        state: >
+          {% set total_water = states('sensor.cs_total_water_used_24h') | float(0) %}
+          {% set target_vwc_hits = states('sensor.cs_target_vwc_hits_24h') | float(0) %}
+          {% set total_shots = states('sensor.cs_total_shots_24h') | float(1) %}
+          {% if total_shots > 0 %}
+            {{ ((target_vwc_hits / total_shots) * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: "mdi:chart-line"
+        attributes:
+          category: "irrigation_efficiency"
+          calculation: "target_hits / total_shots * 100"
+
+      - name: "cs_water_efficiency_score"
+        unique_id: cs_water_efficiency_score
+        state: >
+          {% set avg_vwc_variance = states('sensor.cs_vwc_variance_24h') | float(100) %}
+          {% set dryback_consistency = states('sensor.cs_dryback_consistency_24h') | float(0) %}
+          {% set ec_stability = states('sensor.cs_ec_stability_24h') | float(0) %}
+          {% set efficiency_score = (100 - avg_vwc_variance) * 0.4 + dryback_consistency * 0.3 + ec_stability * 0.3 %}
+          {{ efficiency_score | round(1) }}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: "mdi:water-check"
+        attributes:
+          category: "performance_metrics"
+          components:
+            vwc_variance_weight: 0.4
+            dryback_consistency_weight: 0.3
+            ec_stability_weight: 0.3
+
+      # STATISTICAL ANALYSIS
+      - name: "cs_vwc_variance_24h"
+        unique_id: cs_vwc_variance_24h
+        state: >
+          {% set history = states('sensor.cs_vwc_history_24h') %}
+          {% if history and history != 'unknown' and history != '' %}
+            {% set data = history | from_json(default=[]) %}
+            {% if data | length > 1 %}
+              {% set mean = (data | sum) / (data | length) %}
+              {% set variance = 0 %}
+              {% for value in data %}
+                {% set variance = variance + ((value - mean) ** 2) %}
+              {% endfor %}
+              {{ (variance / (data | length)) | round(2) }}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: "%²"
+        state_class: measurement
+        icon: "mdi:chart-bell-curve"
+
+      - name: "cs_ec_stability_24h"
+        unique_id: cs_ec_stability_24h
+        state: >
+          {% set history = states('sensor.cs_ec_history_24h') %}
+          {% if history and history != 'unknown' and history != '' %}
+            {% set data = history | from_json(default=[]) %}
+            {% if data | length > 1 %}
+              {% set mean = (data | sum) / (data | length) %}
+              {% set max_val = data | max %}
+              {% set min_val = data | min %}
+              {% set range_val = max_val - min_val %}
+              {% if mean > 0 %}
+                {% set stability = 100 - ((range_val / mean) * 100) %}
+                {{ [0, stability] | max | round(1) }}
+              {% else %}
+                0
+              {% endif %}
+            {% else %}
+              100
+            {% endif %}
+          {% else %}
+            100
+          {% endif %}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: "mdi:chart-timeline-variant"
+
+      # DRYBACK PATTERN ANALYSIS
+      - name: "cs_dryback_consistency_24h"
+        unique_id: cs_dryback_consistency_24h
+        state: >
+          {% set history = states('sensor.dryback_history') %}
+          {% if history and history != 'unknown' and history != '' %}
+            {% set data = history | from_json(default=[]) %}
+            {% set recent = data | selectattr('timestamp', 'gt', (now().timestamp() - 86400)) | list %}
+            {% if recent | length > 1 %}
+              {% set percentages = recent | map(attribute='percentage') | map('float') | list %}
+              {% set durations = recent | map(attribute='duration') | map('float') | list %}
+              {% if percentages | length > 1 and durations | length > 1 %}
+                {% set perc_mean = (percentages | sum) / (percentages | length) %}
+                {% set dur_mean = (durations | sum) / (durations | length) %}
+                {% set perc_variance = 0 %}
+                {% set dur_variance = 0 %}
+                {% for p in percentages %}
+                  {% set perc_variance = perc_variance + ((p - perc_mean) ** 2) %}
+                {% endfor %}
+                {% for d in durations %}
+                  {% set dur_variance = dur_variance + ((d - dur_mean) ** 2) %}
+                {% endfor %}
+                {% set perc_cv = (perc_variance / (percentages | length)) ** 0.5 / perc_mean if perc_mean > 0 else 1 %}
+                {% set dur_cv = (dur_variance / (durations | length)) ** 0.5 / dur_mean if dur_mean > 0 else 1 %}
+                {% set consistency = 100 - ((perc_cv + dur_cv) * 50) %}
+                {{ [0, consistency] | max | round(1) }}
+              {% else %}
+                0
+              {% endif %}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: "mdi:chart-scatter-plot"
+
+      # WATER USAGE TRACKING
+      - name: "cs_total_water_used_24h"
+        unique_id: cs_total_water_used_24h
+        state: >
+          {% set p1_shots = states('sensor.cs_p1_shots_24h') | float(0) %}
+          {% set p2_shots = states('sensor.cs_p2_shots_24h') | float(0) %}
+          {% set p3_shots = states('sensor.cs_p3_shots_24h') | float(0) %}
+          {% set p1_volume = p1_shots * (states('input_number.cs_p1_initial_shot_size_percent') | float(0) / 100) * states('input_number.cs_substrate_volume') | float(0) %}
+          {% set p2_volume = p2_shots * (states('input_number.cs_p2_shot_size_percent') | float(0) / 100) * states('input_number.cs_substrate_volume') | float(0) %}
+          {% set p3_volume = p3_shots * (states('input_number.cs_p3_emergency_shot_size_percent') | float(0) / 100) * states('input_number.cs_substrate_volume') | float(0) %}
+          {{ (p1_volume + p2_volume + p3_volume) | round(2) }}
+        unit_of_measurement: "L"
+        state_class: total_increasing
+        icon: "mdi:water"
+        attributes:
+          p1_volume: >
+            {% set p1_shots = states('sensor.cs_p1_shots_24h') | float(0) %}
+            {{ (p1_shots * (states('input_number.cs_p1_initial_shot_size_percent') | float(0) / 100) * states('input_number.cs_substrate_volume') | float(0)) | round(2) }}
+          p2_volume: >
+            {% set p2_shots = states('sensor.cs_p2_shots_24h') | float(0) %}
+            {{ (p2_shots * (states('input_number.cs_p2_shot_size_percent') | float(0) / 100) * states('input_number.cs_substrate_volume') | float(0)) | round(2) }}
+          p3_volume: >
+            {% set p3_shots = states('sensor.cs_p3_shots_24h') | float(0) %}
+            {{ (p3_shots * (states('input_number.cs_p3_emergency_shot_size_percent') | float(0) / 100) * states('input_number.cs_substrate_volume') | float(0)) | round(2) }}
+
+      # PERFORMANCE RECOMMENDATIONS
+      - name: "cs_optimization_recommendation"
+        unique_id: cs_optimization_recommendation
+        state: >
+          {% set efficiency = states('sensor.cs_irrigation_efficiency_24h') | float(0) %}
+          {% set variance = states('sensor.cs_vwc_variance_24h') | float(0) %}
+          {% set consistency = states('sensor.cs_dryback_consistency_24h') | float(0) %}
+          {% set ec_stability = states('sensor.cs_ec_stability_24h') | float(0) %}
+          
+          {% if efficiency < 60 %}
+            irrigation_timing_needs_adjustment
+          {% elif variance > 10 %}
+            reduce_vwc_fluctuations
+          {% elif consistency < 70 %}
+            improve_dryback_consistency
+          {% elif ec_stability < 80 %}
+            stabilize_nutrient_levels
+          {% else %}
+            system_performing_optimally
+          {% endif %}
+        icon: "mdi:lightbulb"
+        attributes:
+          efficiency_score: "{{ states('sensor.cs_irrigation_efficiency_24h') }}%"
+          variance_score: "{{ states('sensor.cs_vwc_variance_24h') }}%²"
+          consistency_score: "{{ states('sensor.cs_dryback_consistency_24h') }}%"
+          stability_score: "{{ states('sensor.cs_ec_stability_24h') }}%"
+          recommendations:
+            - >
+              {% if states('sensor.cs_irrigation_efficiency_24h') | float(0) < 60 %}
+              Adjust irrigation timing - efficiency below 60%
+              {% endif %}
+            - >
+              {% if states('sensor.cs_vwc_variance_24h') | float(0) > 10 %}
+              Reduce VWC fluctuations - variance above 10%²
+              {% endif %}
+            - >
+              {% if states('sensor.cs_dryback_consistency_24h') | float(0) < 70 %}
+              Improve dryback consistency - below 70%
+              {% endif %}
+            - >
+              {% if states('sensor.cs_ec_stability_24h') | float(0) < 80 %}
+              Stabilize nutrient levels - EC stability below 80%
+              {% endif %}
+
+      # GROWTH PHASE ANALYSIS
+      - name: "cs_growth_stage_recommendation"
+        unique_id: cs_growth_stage_recommendation
+        state: >
+          {% set avg_dryback = states('sensor.dryback_avg_percentage_24h') | float(0) %}
+          {% set avg_ec = states('sensor.cs_configured_avg_ec') | float(0) %}
+          {% set current_mode = states('input_select.cs_steering_mode') %}
+          
+          {% if avg_dryback < 3 and avg_ec < 1.5 %}
+            early_vegetative_optimal
+          {% elif avg_dryback >= 3 and avg_dryback <= 6 and avg_ec >= 1.5 and avg_ec <= 2.2 %}
+            late_vegetative_optimal
+          {% elif avg_dryback > 6 and avg_ec > 2.2 %}
+            generative_optimal
+          {% elif current_mode == 'Vegetative' and avg_dryback > 5 %}
+            consider_generative_transition
+          {% elif current_mode == 'Generative' and avg_dryback < 4 %}
+            consider_vegetative_adjustment
+          {% else %}
+            monitoring_required
+          {% endif %}
+        icon: "mdi:sprout"
+        attributes:
+          current_mode: "{{ states('input_select.cs_steering_mode') }}"
+          avg_dryback_24h: "{{ states('sensor.dryback_avg_percentage_24h') }}%"
+          avg_ec: "{{ states('sensor.cs_configured_avg_ec') }} mS/cm"
+          optimal_ranges:
+            early_vegetative: "Dryback: <3%, EC: <1.5 mS/cm"
+            late_vegetative: "Dryback: 3-6%, EC: 1.5-2.2 mS/cm"
+            generative: "Dryback: >6%, EC: >2.2 mS/cm"
+
+# HISTORY TRACKING SENSORS (for statistical calculations)
+  - sensor:
+      - name: "cs_vwc_history_24h"
+        unique_id: cs_vwc_history_24h
+        state: "{{ states('input_text.cs_vwc_history_json') }}"
+        attributes:
+          update_frequency: "every_sensor_update"
+          max_entries: 288  # 24h * 12 entries/hour = 288 entries
+          
+      - name: "cs_ec_history_24h"
+        unique_id: cs_ec_history_24h
+        state: "{{ states('input_text.cs_ec_history_json') }}"
+        attributes:
+          update_frequency: "every_sensor_update"
+          max_entries: 288
+
+      # SHOT COUNTING SENSORS (for water usage calculations)
+      - name: "cs_p1_shots_24h"
+        unique_id: cs_p1_shots_24h
+        state: "{{ states('input_text.cs_shot_history_24h') | from_json(default=[]) | selectattr('phase', 'eq', 'P1') | selectattr('timestamp', 'gt', now().timestamp() - 86400) | list | length }}"
+        state_class: measurement
+        icon: "mdi:counter"
+
+      - name: "cs_p2_shots_24h"
+        unique_id: cs_p2_shots_24h
+        state: "{{ states('input_text.cs_shot_history_24h') | from_json(default=[]) | selectattr('phase', 'eq', 'P2') | selectattr('timestamp', 'gt', now().timestamp() - 86400) | list | length }}"
+        state_class: measurement
+        icon: "mdi:counter"
+
+      - name: "cs_p3_shots_24h"
+        unique_id: cs_p3_shots_24h
+        state: "{{ states('input_text.cs_shot_history_24h') | from_json(default=[]) | selectattr('phase', 'eq', 'P3') | selectattr('timestamp', 'gt', now().timestamp() - 86400) | list | length }}"
+        state_class: measurement
+        icon: "mdi:counter"
+
+      - name: "cs_total_shots_24h"
+        unique_id: cs_total_shots_24h
+        state: >
+          {% set p1 = states('sensor.cs_p1_shots_24h') | float(0) %}
+          {% set p2 = states('sensor.cs_p2_shots_24h') | float(0) %}
+          {% set p3 = states('sensor.cs_p3_shots_24h') | float(0) %}
+          {{ (p1 + p2 + p3) | round(0) }}
+        state_class: measurement
+        icon: "mdi:counter"
+
+      - name: "cs_target_vwc_hits_24h"
+        unique_id: cs_target_vwc_hits_24h
+        state: "{{ states('input_text.cs_shot_history_24h') | from_json(default=[]) | selectattr('target_achieved', 'eq', true) | selectattr('timestamp', 'gt', now().timestamp() - 86400) | list | length }}"
+        state_class: measurement
+        icon: "mdi:target"

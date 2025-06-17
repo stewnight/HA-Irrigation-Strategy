@@ -1,0 +1,357 @@
+# Advanced Sensor Fusion System
+# Provides intelligent sensor data processing with outlier detection and data validation
+
+template:
+  - sensor:
+      # FUSED VWC SENSORS (Multiple sensor fusion with outlier detection)
+      - name: "cs_fused_vwc_reading"
+        unique_id: cs_fused_vwc_reading
+        state: >
+          {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+          {% set values = [] %}
+          {% for entity in entity_ids %}
+            {% set value = states(entity) | float(none) %}
+            {% if value is not none and value != 'unknown' and value != 'unavailable' %}
+              {% set values = values + [value] %}
+            {% endif %}
+          {% endfor %}
+          
+          {% if values | length >= 2 %}
+            {# Apply outlier detection using IQR method #}
+            {% set sorted_values = values | sort %}
+            {% set n = values | length %}
+            {% set q1_index = ((n + 1) * 0.25) | round(0, 'floor') - 1 %}
+            {% set q3_index = ((n + 1) * 0.75) | round(0, 'floor') - 1 %}
+            {% set q1 = sorted_values[q1_index] if q1_index >= 0 and q1_index < n else sorted_values[0] %}
+            {% set q3 = sorted_values[q3_index] if q3_index >= 0 and q3_index < n else sorted_values[-1] %}
+            {% set iqr = q3 - q1 %}
+            {% set lower_bound = q1 - (1.5 * iqr) %}
+            {% set upper_bound = q3 + (1.5 * iqr) %}
+            
+            {# Filter out outliers #}
+            {% set filtered_values = [] %}
+            {% for value in values %}
+              {% if value >= lower_bound and value <= upper_bound %}
+                {% set filtered_values = filtered_values + [value] %}
+              {% endif %}
+            {% endfor %}
+            
+            {# Calculate weighted average (recent readings weighted higher) #}
+            {% if filtered_values | length > 0 %}
+              {% if filtered_values | length == 1 %}
+                {{ filtered_values[0] | round(2) }}
+              {% else %}
+                {# Use median for robustness #}
+                {% set sorted_filtered = filtered_values | sort %}
+                {% set mid = (sorted_filtered | length / 2) | round(0, 'floor') %}
+                {% if sorted_filtered | length % 2 == 1 %}
+                  {{ sorted_filtered[mid] | round(2) }}
+                {% else %}
+                  {{ ((sorted_filtered[mid-1] + sorted_filtered[mid]) / 2) | round(2) }}
+                {% endif %}
+              {% endif %}
+            {% else %}
+              unknown
+            {% endif %}
+          {% elif values | length == 1 %}
+            {{ values[0] | round(2) }}
+          {% else %}
+            unknown
+          {% endif %}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: "mdi:water-percent"
+        attributes:
+          sensor_count: >
+            {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+            {% set values = [] %}
+            {% for entity in entity_ids %}
+              {% set value = states(entity) | float(none) %}
+              {% if value is not none and value != 'unknown' and value != 'unavailable' %}
+                {% set values = values + [value] %}
+              {% endif %}
+            {% endfor %}
+            {{ values | length }}
+          outliers_detected: >
+            {% set entity_ids = states('input_text.cs_config_vwc_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+            {% set values = [] %}
+            {% for entity in entity_ids %}
+              {% set value = states(entity) | float(none) %}
+              {% if value is not none and value != 'unknown' and value != 'unavailable' %}
+                {% set values = values + [value] %}
+              {% endif %}
+            {% endfor %}
+            
+            {% if values | length >= 2 %}
+              {% set sorted_values = values | sort %}
+              {% set n = values | length %}
+              {% set q1_index = ((n + 1) * 0.25) | round(0, 'floor') - 1 %}
+              {% set q3_index = ((n + 1) * 0.75) | round(0, 'floor') - 1 %}
+              {% set q1 = sorted_values[q1_index] if q1_index >= 0 and q1_index < n else sorted_values[0] %}
+              {% set q3 = sorted_values[q3_index] if q3_index >= 0 and q3_index < n else sorted_values[-1] %}
+              {% set iqr = q3 - q1 %}
+              {% set lower_bound = q1 - (1.5 * iqr) %}
+              {% set upper_bound = q3 + (1.5 * iqr) %}
+              
+              {% set outliers = [] %}
+              {% for value in values %}
+                {% if value < lower_bound or value > upper_bound %}
+                  {% set outliers = outliers + [value] %}
+                {% endif %}
+              {% endfor %}
+              {{ outliers | length }}
+            {% else %}
+              0
+            {% endif %}
+          confidence_level: >
+            {% set sensor_count = state_attr('sensor.cs_fused_vwc_reading', 'sensor_count') | int(0) %}
+            {% set outliers = state_attr('sensor.cs_fused_vwc_reading', 'outliers_detected') | int(0) %}
+            {% if sensor_count == 0 %}
+              0
+            {% elif sensor_count == 1 %}
+              60
+            {% elif sensor_count >= 2 and outliers == 0 %}
+              95
+            {% elif sensor_count >= 3 and outliers <= 1 %}
+              85
+            {% else %}
+              70
+            {% endif %}
+
+      # FUSED EC SENSORS 
+      - name: "cs_fused_ec_reading"
+        unique_id: cs_fused_ec_reading
+        state: >
+          {% set entity_ids = states('input_text.cs_config_ec_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+          {% set values = [] %}
+          {% for entity in entity_ids %}
+            {% set value = states(entity) | float(none) %}
+            {% if value is not none and value != 'unknown' and value != 'unavailable' %}
+              {% set values = values + [value] %}
+            {% endif %}
+          {% endfor %}
+          
+          {% if values | length >= 2 %}
+            {# Apply outlier detection #}
+            {% set sorted_values = values | sort %}
+            {% set n = values | length %}
+            {% set q1_index = ((n + 1) * 0.25) | round(0, 'floor') - 1 %}
+            {% set q3_index = ((n + 1) * 0.75) | round(0, 'floor') - 1 %}
+            {% set q1 = sorted_values[q1_index] if q1_index >= 0 and q1_index < n else sorted_values[0] %}
+            {% set q3 = sorted_values[q3_index] if q3_index >= 0 and q3_index < n else sorted_values[-1] %}
+            {% set iqr = q3 - q1 %}
+            {% set lower_bound = q1 - (1.5 * iqr) %}
+            {% set upper_bound = q3 + (1.5 * iqr) %}
+            
+            {% set filtered_values = [] %}
+            {% for value in values %}
+              {% if value >= lower_bound and value <= upper_bound %}
+                {% set filtered_values = filtered_values + [value] %}
+              {% endif %}
+            {% endfor %}
+            
+            {% if filtered_values | length > 0 %}
+              {% if filtered_values | length == 1 %}
+                {{ filtered_values[0] | round(2) }}
+              {% else %}
+                {% set sorted_filtered = filtered_values | sort %}
+                {% set mid = (sorted_filtered | length / 2) | round(0, 'floor') %}
+                {% if sorted_filtered | length % 2 == 1 %}
+                  {{ sorted_filtered[mid] | round(2) }}
+                {% else %}
+                  {{ ((sorted_filtered[mid-1] + sorted_filtered[mid]) / 2) | round(2) }}
+                {% endif %}
+              {% endif %}
+            {% else %}
+              unknown
+            {% endif %}
+          {% elif values | length == 1 %}
+            {{ values[0] | round(2) }}
+          {% else %}
+            unknown
+          {% endif %}
+        unit_of_measurement: "mS/cm"
+        state_class: measurement
+        icon: "mdi:flash"
+        attributes:
+          sensor_count: >
+            {% set entity_ids = states('input_text.cs_config_ec_sensor_entities').split(',') | map('trim') | reject('==', '') | list %}
+            {% set values = [] %}
+            {% for entity in entity_ids %}
+              {% set value = states(entity) | float(none) %}
+              {% if value is not none and value != 'unknown' and value != 'unavailable' %}
+                {% set values = values + [value] %}
+              {% endif %}
+            {% endfor %}
+            {{ values | length }}
+          confidence_level: >
+            {% set sensor_count = state_attr('sensor.cs_fused_ec_reading', 'sensor_count') | int(0) %}
+            {% if sensor_count == 0 %}
+              0
+            {% elif sensor_count == 1 %}
+              60
+            {% elif sensor_count >= 2 %}
+              90
+            {% else %}
+              70
+            {% endif %}
+
+      # SENSOR HEALTH MONITORING
+      - name: "cs_sensor_health_score"
+        unique_id: cs_sensor_health_score
+        state: >
+          {% set vwc_confidence = state_attr('sensor.cs_fused_vwc_reading', 'confidence_level') | int(0) %}
+          {% set ec_confidence = state_attr('sensor.cs_fused_ec_reading', 'confidence_level') | int(0) %}
+          {% set avg_confidence = (vwc_confidence + ec_confidence) / 2 %}
+          {{ avg_confidence | round(0) }}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: >
+          {% set score = states('sensor.cs_sensor_health_score') | int(0) %}
+          {% if score >= 85 %}
+            mdi:check-circle
+          {% elif score >= 70 %}
+            mdi:alert-circle
+          {% else %}
+            mdi:close-circle
+          {% endif %}
+        attributes:
+          vwc_confidence: "{{ state_attr('sensor.cs_fused_vwc_reading', 'confidence_level') }}%"
+          ec_confidence: "{{ state_attr('sensor.cs_fused_ec_reading', 'confidence_level') }}%"
+          status: >
+            {% set score = states('sensor.cs_sensor_health_score') | int(0) %}
+            {% if score >= 85 %}
+              excellent
+            {% elif score >= 70 %}
+              good
+            {% elif score >= 50 %}
+              fair
+            {% else %}
+              poor
+            {% endif %}
+
+      # PREDICTIVE READINGS (with trend analysis)
+      - name: "cs_vwc_trend_prediction"
+        unique_id: cs_vwc_trend_prediction
+        state: >
+          {% set current = states('sensor.cs_fused_vwc_reading') | float(0) %}
+          {% set history = states('sensor.cs_vwc_history_24h') | from_json(default=[]) %}
+          {% if history | length >= 3 %}
+            {% set recent = history[-3:] %}
+            {% set trend = (recent[-1] - recent[0]) / 2 %}
+            {% set predicted = current + (trend * 2) %}
+            {{ predicted | round(2) }}
+          {% else %}
+            {{ current }}
+          {% endif %}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: "mdi:trending-up"
+        attributes:
+          trend_direction: >
+            {% set current = states('sensor.cs_fused_vwc_reading') | float(0) %}
+            {% set predicted = states('sensor.cs_vwc_trend_prediction') | float(0) %}
+            {% set diff = predicted - current %}
+            {% if diff > 0.5 %}
+              increasing
+            {% elif diff < -0.5 %}
+              decreasing
+            {% else %}
+              stable
+            {% endif %}
+          trend_magnitude: >
+            {% set current = states('sensor.cs_fused_vwc_reading') | float(0) %}
+            {% set predicted = states('sensor.cs_vwc_trend_prediction') | float(0) %}
+            {{ (predicted - current) | abs | round(2) }}
+
+      # INTELLIGENT ZONE SELECTION 
+      - name: "cs_optimal_irrigation_zone"
+        unique_id: cs_optimal_irrigation_zone
+        state: >
+          {% set zone1_vwc = states('sensor.zone_1_vwc') | float(100) %}
+          {% set zone2_vwc = states('sensor.zone_2_vwc') | float(100) %}
+          {% set zone3_vwc = states('sensor.zone_3_vwc') | float(100) %}
+          {% set zone1_enabled = is_state('input_boolean.cs_zone_1_enabled', 'on') %}
+          {% set zone2_enabled = is_state('input_boolean.cs_zone_2_enabled', 'on') %}
+          {% set zone3_enabled = is_state('input_boolean.cs_zone_3_enabled', 'on') %}
+          
+          {% set zones = [] %}
+          {% if zone1_enabled and zone1_vwc != 100 %}
+            {% set zones = zones + [{'zone': 1, 'vwc': zone1_vwc, 'priority': zone1_vwc}] %}
+          {% endif %}
+          {% if zone2_enabled and zone2_vwc != 100 %}
+            {% set zones = zones + [{'zone': 2, 'vwc': zone2_vwc, 'priority': zone2_vwc}] %}
+          {% endif %}
+          {% if zone3_enabled and zone3_vwc != 100 %}
+            {% set zones = zones + [{'zone': 3, 'vwc': zone3_vwc, 'priority': zone3_vwc}] %}
+          {% endif %}
+          
+          {% if zones | length > 0 %}
+            {% set optimal_zone = zones | sort(attribute='priority') | first %}
+            {{ optimal_zone.zone }}
+          {% else %}
+            none
+          {% endif %}
+        icon: "mdi:water-pump"
+        attributes:
+          zone_1_vwc: "{{ states('sensor.zone_1_vwc') }}%"
+          zone_2_vwc: "{{ states('sensor.zone_2_vwc') }}%"
+          zone_3_vwc: "{{ states('sensor.zone_3_vwc') }}%"
+          recommendation_reason: >
+            {% set optimal = states('sensor.cs_optimal_irrigation_zone') %}
+            {% if optimal == 'none' %}
+              No zones enabled or available
+            {% else %}
+              Zone {{ optimal }} has lowest VWC reading
+            {% endif %}
+
+  # BINARY SENSORS FOR ALERTS
+  - binary_sensor:
+      - name: "cs_sensor_fusion_alert"
+        unique_id: cs_sensor_fusion_alert
+        state: >
+          {% set vwc_outliers = state_attr('sensor.cs_fused_vwc_reading', 'outliers_detected') | int(0) %}
+          {% set ec_outliers = state_attr('sensor.cs_fused_ec_reading', 'outliers_detected') | int(0) %}
+          {% set health_score = states('sensor.cs_sensor_health_score') | int(100) %}
+          {{ vwc_outliers > 1 or ec_outliers > 1 or health_score < 60 }}
+        device_class: problem
+        attributes:
+          vwc_outliers: "{{ state_attr('sensor.cs_fused_vwc_reading', 'outliers_detected') }}"
+          ec_outliers: "{{ state_attr('sensor.cs_fused_ec_reading', 'outliers_detected') }}"
+          health_score: "{{ states('sensor.cs_sensor_health_score') }}%"
+          alert_reason: >
+            {% set vwc_outliers = state_attr('sensor.cs_fused_vwc_reading', 'outliers_detected') | int(0) %}
+            {% set ec_outliers = state_attr('sensor.cs_fused_ec_reading', 'outliers_detected') | int(0) %}
+            {% set health_score = states('sensor.cs_sensor_health_score') | int(100) %}
+            {% if vwc_outliers > 1 %}
+              Multiple VWC sensor outliers detected
+            {% elif ec_outliers > 1 %}
+              Multiple EC sensor outliers detected
+            {% elif health_score < 60 %}
+              Low sensor health score
+            {% else %}
+              No issues detected
+            {% endif %}
+
+      - name: "cs_data_quality_warning"
+        unique_id: cs_data_quality_warning
+        state: >
+          {% set vwc_sensors = state_attr('sensor.cs_fused_vwc_reading', 'sensor_count') | int(0) %}
+          {% set ec_sensors = state_attr('sensor.cs_fused_ec_reading', 'sensor_count') | int(0) %}
+          {{ vwc_sensors < 2 or ec_sensors < 2 }}
+        device_class: problem
+        attributes:
+          vwc_sensor_count: "{{ state_attr('sensor.cs_fused_vwc_reading', 'sensor_count') }}"
+          ec_sensor_count: "{{ state_attr('sensor.cs_fused_ec_reading', 'sensor_count') }}"
+          recommendation: >
+            {% set vwc_sensors = state_attr('sensor.cs_fused_vwc_reading', 'sensor_count') | int(0) %}
+            {% set ec_sensors = state_attr('sensor.cs_fused_ec_reading', 'sensor_count') | int(0) %}
+            {% if vwc_sensors < 2 and ec_sensors < 2 %}
+              Add more VWC and EC sensors for better reliability
+            {% elif vwc_sensors < 2 %}
+              Add more VWC sensors for better reliability
+            {% elif ec_sensors < 2 %}
+              Add more EC sensors for better reliability
+            {% else %}
+              Sensor coverage is adequate
+            {% endif %}
