@@ -22,17 +22,19 @@ cards:
             name: System Enabled
           
       - type: entities
-        title: 📊 System Metrics
+        title: 📊 System Metrics & Calculations
         show_header_toggle: false
         entities:
+          - entity: sensor.crop_steering_configured_avg_vwc
+            name: Average VWC (All Zones)
+          - entity: sensor.crop_steering_configured_avg_ec
+            name: Average EC (All Zones)
+          - entity: sensor.crop_steering_ec_ratio
+            name: EC Ratio (Current/Target)
           - entity: sensor.crop_steering_irrigation_efficiency
             name: Irrigation Efficiency
-          - entity: sensor.crop_steering_daily_water_usage
-            name: Daily Water Usage
           - entity: sensor.crop_steering_dryback_percentage
             name: Current Dryback
-          - entity: sensor.crop_steering_next_irrigation_time
-            name: Next Irrigation
             
       - type: entities
         title: ⚙️ Core Settings
@@ -199,13 +201,17 @@ cards:
             name: Max EC (mS/cm)
 
       - type: entities
-        title: 📊 Integration Metrics (if available)
+        title: ⏱️ Shot Duration Calculations
         show_header_toggle: false
         entities:
-          - entity: sensor.crop_steering_vwc_zone_1
-            name: Integration VWC Zone 1
-          - entity: sensor.crop_steering_ec_zone_1
-            name: Integration EC Zone 1
+          - entity: sensor.crop_steering_p1_shot_duration_seconds
+            name: P1 Shot Duration (s)
+          - entity: sensor.crop_steering_p2_shot_duration_seconds
+            name: P2 Shot Duration (s)
+          - entity: sensor.crop_steering_p3_shot_duration_seconds
+            name: P3 Emergency Duration (s)
+          - entity: sensor.crop_steering_p2_vwc_threshold_adjusted
+            name: P2 Adjusted Threshold (%)
 
   # 5. HARDWARE CONTROL - ORGANIZED BY FUNCTION
   - type: grid
