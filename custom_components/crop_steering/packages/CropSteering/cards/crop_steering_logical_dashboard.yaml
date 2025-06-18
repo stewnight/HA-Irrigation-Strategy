@@ -1,0 +1,265 @@
+# Logical Crop Steering Dashboard
+# Proper organization with consistent zone coverage and logical flow
+
+type: vertical-stack
+cards:
+  # 1. SYSTEM STATUS OVERVIEW
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: entities
+        title: 🌱 Current System State
+        show_header_toggle: false
+        entities:
+          - entity: sensor.crop_steering_current_phase
+            name: Active Phase
+          - entity: select.crop_steering_steering_mode
+            name: Steering Mode
+          - entity: select.crop_steering_irrigation_phase
+            name: Manual Override
+          - entity: switch.crop_steering_system_enabled
+            name: System Enabled
+          
+      - type: entities
+        title: 📊 System Metrics
+        show_header_toggle: false
+        entities:
+          - entity: sensor.crop_steering_irrigation_efficiency
+            name: Irrigation Efficiency
+          - entity: sensor.crop_steering_daily_water_usage
+            name: Daily Water Usage
+          - entity: sensor.crop_steering_dryback_percentage
+            name: Current Dryback
+          - entity: sensor.crop_steering_next_irrigation_time
+            name: Next Irrigation
+            
+      - type: entities
+        title: ⚙️ Core Settings
+        show_header_toggle: false
+        entities:
+          - entity: select.crop_steering_crop_type
+            name: Crop Type
+          - entity: switch.crop_steering_ec_stacking_enabled
+            name: EC Stacking
+          - entity: number.crop_steering_substrate_volume
+            name: Substrate Volume (L)
+          - entity: number.crop_steering_field_capacity
+            name: Field Capacity (%)
+
+  # 2. ALL ZONE SENSOR DATA - CONSISTENT ORGANIZATION
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: entities
+        title: 📊 Zone 1 - All Sensors
+        show_header_toggle: false
+        entities:
+          - entity: sensor.vwc_r1_front
+            name: VWC Front (%)
+            icon: mdi:water-percent
+          - entity: sensor.vwc_r1_back
+            name: VWC Back (%)
+            icon: mdi:water-percent
+          - entity: sensor.ec_r1_front
+            name: EC Front (mS/cm)
+            icon: mdi:lightning-bolt
+          - entity: sensor.ec_r1_back
+            name: EC Back (mS/cm)
+            icon: mdi:lightning-bolt
+          - type: divider
+          - entity: switch.crop_steering_zone_1_enabled
+            name: Zone 1 Active
+            icon: mdi:power
+
+      - type: entities
+        title: 📊 Zone 2 - All Sensors
+        show_header_toggle: false
+        entities:
+          - entity: sensor.vwc_r2_front
+            name: VWC Front (%)
+            icon: mdi:water-percent
+          - entity: sensor.vwc_r2_back
+            name: VWC Back (%)
+            icon: mdi:water-percent
+          - entity: sensor.ec_r2_front
+            name: EC Front (mS/cm)
+            icon: mdi:lightning-bolt
+          - entity: sensor.ec_r2_back
+            name: EC Back (mS/cm)
+            icon: mdi:lightning-bolt
+          - type: divider
+          - entity: switch.crop_steering_zone_2_enabled
+            name: Zone 2 Active
+            icon: mdi:power
+
+      - type: entities
+        title: 📊 Zone 3 - All Sensors
+        show_header_toggle: false
+        entities:
+          - entity: sensor.vwc_r3_front
+            name: VWC Front (%)
+            icon: mdi:water-percent
+          - entity: sensor.vwc_r3_back
+            name: VWC Back (%)
+            icon: mdi:water-percent
+          - entity: sensor.ec_r3_front
+            name: EC Front (mS/cm)
+            icon: mdi:lightning-bolt
+          - entity: sensor.ec_r3_back
+            name: EC Back (mS/cm)
+            icon: mdi:lightning-bolt
+          - type: divider
+          - entity: switch.crop_steering_zone_3_enabled
+            name: Zone 3 Active
+            icon: mdi:power
+
+  # 3. PHASE CONFIGURATION - ALL PARAMETERS ORGANIZED BY PHASE
+  - type: grid
+    columns: 4
+    square: false
+    cards:
+      # P0 - Morning Dryback
+      - type: entities
+        title: 🌅 P0 - Morning Dryback
+        show_header_toggle: false
+        entities:
+          - entity: number.crop_steering_veg_dryback_target
+            name: Veg Target (%)
+          - entity: number.crop_steering_gen_dryback_target
+            name: Gen Target (%)
+          - entity: number.crop_steering_p0_dryback_drop_percent
+            name: Drop % Required
+          - entity: number.crop_steering_p0_min_wait_time
+            name: Min Wait (min)
+          - entity: number.crop_steering_p0_max_wait_time
+            name: Max Wait (min)
+
+      # P1 - Ramp Up
+      - type: entities
+        title: 📈 P1 - Ramp Up
+        show_header_toggle: false
+        entities:
+          - entity: number.crop_steering_p1_target_vwc
+            name: Target VWC (%)
+          - entity: number.crop_steering_p1_initial_shot_size
+            name: Initial Shot (%)
+          - entity: number.crop_steering_p1_shot_increment
+            name: Shot Increment (%)
+          - entity: number.crop_steering_p1_max_shot_size
+            name: Max Shot (%)
+          - entity: number.crop_steering_p1_time_between_shots
+            name: Time Between (min)
+          - entity: number.crop_steering_p1_min_shots
+            name: Min Shots
+          - entity: number.crop_steering_p1_max_shots
+            name: Max Shots
+
+      # P2 - Maintenance
+      - type: entities
+        title: 🔄 P2 - Maintenance
+        show_header_toggle: false
+        entities:
+          - entity: number.crop_steering_p2_vwc_threshold
+            name: VWC Trigger (%)
+          - entity: number.crop_steering_p2_shot_size
+            name: Shot Size (%)
+          - entity: number.crop_steering_p2_ec_high_threshold
+            name: EC High Ratio
+          - entity: number.crop_steering_p2_ec_low_threshold
+            name: EC Low Ratio
+
+      # P3 - Pre-Lights-Off
+      - type: entities
+        title: 🌙 P3 - Pre-Lights-Off
+        show_header_toggle: false
+        entities:
+          - entity: number.crop_steering_p3_veg_last_irrigation
+            name: Veg Last Irrig (min)
+          - entity: number.crop_steering_p3_gen_last_irrigation
+            name: Gen Last Irrig (min)
+          - entity: number.crop_steering_p3_emergency_vwc_threshold
+            name: Emergency VWC (%)
+          - entity: number.crop_steering_p3_emergency_shot_size
+            name: Emergency Shot (%)
+
+  # 4. SYSTEM PARAMETERS
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: entities
+        title: ⚙️ Physical System Settings
+        show_header_toggle: false
+        entities:
+          - entity: number.crop_steering_dripper_flow_rate
+            name: Flow Rate (L/hr)
+          - entity: number.crop_steering_max_ec
+            name: Max EC (mS/cm)
+
+      - type: entities
+        title: 📊 Integration Metrics (if available)
+        show_header_toggle: false
+        entities:
+          - entity: sensor.crop_steering_vwc_zone_1
+            name: Integration VWC Zone 1
+          - entity: sensor.crop_steering_ec_zone_1
+            name: Integration EC Zone 1
+
+  # 5. HARDWARE CONTROL - ORGANIZED BY FUNCTION
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: entities
+        title: 🔧 Main System Hardware
+        show_header_toggle: false
+        entities:
+          - entity: switch.f1_irrigation_pump_master_switch
+            name: Master Pump
+            icon: mdi:power-plug
+          - entity: switch.espoe_irrigation_relay_1_2
+            name: Main Line Valve
+            icon: mdi:pipe
+          - entity: switch.espoe_irrigation_relay_1_4
+            name: Mains Water Valve
+            icon: mdi:pipe-valve
+          - entity: switch.espoe_irrigation_relay_2_4
+            name: Manifold Valve
+            icon: mdi:pipe-valve
+
+      - type: entities
+        title: 💧 Zone Valve Controls
+        show_header_toggle: false
+        entities:
+          - entity: switch.f1_irrigation_relays_relay_1
+            name: Zone 1 Valve
+            icon: mdi:sprinkler
+          - entity: switch.f1_irrigation_relays_relay_2
+            name: Zone 2 Valve
+            icon: mdi:sprinkler
+          - entity: switch.f1_irrigation_relays_relay_3
+            name: Zone 3 Valve
+            icon: mdi:sprinkler
+
+      - type: entities
+        title: 🚰 Utility & Legacy Controls
+        show_header_toggle: false
+        entities:
+          - entity: switch.waste_valve
+            name: Waste Valve
+            icon: mdi:pipe-valve
+          - entity: switch.espoe_irrigation_relay_1_1
+            name: Tank Return Valve
+            icon: mdi:water-pump
+          - entity: switch.f1_irrigation_relays_relay_4
+            name: Waste/Hose Valve
+            icon: mdi:pipe-valve
+          - entity: automation.f1_irrigation_irrigate_5_minutes_every_45_minutes
+            name: Legacy Timer
+            icon: mdi:timer
+
+grid_options:
+  columns: 48
+  rows: auto
