@@ -1,8 +1,34 @@
 # 🛠️ Complete Installation Guide
 
-This comprehensive guide covers the complete installation of the Advanced AI Crop Steering System from initial requirements through final testing.
+This step-by-step guide will help you install the Advanced AI Crop Steering System, even if you're new to Home Assistant. We'll walk you through every step!
+
+## 🎯 What You'll Install
+
+- **Crop Steering Integration**: Smart irrigation control for Home Assistant
+- **AI Modules**: Machine learning for predictive irrigation
+- **Dashboard**: Real-time monitoring and analytics
+- **AppDaemon**: Required for AI features
 
 ## 📋 Prerequisites
+
+### Required Home Assistant Add-ons
+
+**YOU MUST INSTALL THESE FIRST:**
+
+1. **AppDaemon 4** (required for AI features)
+   - Go to **Settings** → **Add-ons** → **Add-on Store**
+   - Search for "AppDaemon 4"
+   - Click **INSTALL**
+   - Don't start it yet (we'll configure it first)
+
+2. **File Editor** (makes editing files easy)
+   - In Add-on Store, search for "File Editor"
+   - Click **INSTALL** and **START**
+   - Enable "Show in sidebar"
+
+3. **Samba Share** (optional - for easy file access)
+   - In Add-on Store, search for "Samba Share"
+   - Click **INSTALL** and **START**
 
 ### Hardware Requirements
 
@@ -22,626 +48,433 @@ This comprehensive guide covers the complete installation of the Advanced AI Cro
 
 ### Software Requirements
 
-**Core Dependencies:**
-```bash
-# Python packages (required for AI features)
-numpy>=1.21.0
-pandas>=1.3.0
-plotly>=5.0.0
-scikit-learn>=1.0.0
-scipy>=1.7.0
+**Home Assistant Version:**
+- Home Assistant >= 2024.3.0 (check in Settings → About)
 
-# Home Assistant
-Home Assistant >= 2024.3.0
-AppDaemon >= 4.2.0 (for AI features)
-```
+**Required Add-ons** (install these first!):
+- AppDaemon 4
+- File Editor (for easy file editing)
+- Samba Share (optional, for network file access)
 
 **System Requirements:**
 - **Minimum RAM**: 4GB (8GB recommended for AI features)
-- **Storage**: 500MB for system files, 2GB+ for data storage
-- **CPU**: Multi-core processor recommended for ML operations
-- **Python**: 3.8+ with pip package manager
+- **Storage**: 1GB free space for system and AI data
+- **CPU**: Any multi-core processor (Raspberry Pi 4+ works fine)
 
-## 🚀 Installation Methods
+**AI Features Require:**
+- Python packages (we'll install these automatically)
+- AppDaemon configured and running
+- Integration properly set up
 
-### Option 1: HACS Installation (Recommended)
+## 🚀 Step-by-Step Installation
 
-This is the easiest method for most users.
+### Step 1: Install the Integration via HACS
 
-#### Step 1: Add Custom Repository
-
-1. **Open HACS in Home Assistant:**
-   - Navigate to **HACS** → **Integrations**
-   - Click the **three dots menu (⋮)** in the top right corner
-   - Select **"Custom repositories"**
-
-2. **Add the repository:**
+**1.1: Add Custom Repository**
+1. Open **HACS** in Home Assistant sidebar
+2. Click **Integrations**
+3. Click the **three dots menu (⋮)** in top-right corner
+4. Select **"Custom repositories"**
+5. Enter these details:
    ```
-   Repository URL: https://github.com/JakeTheRabbit/HA-Irrigation-Strategy
+   Repository: https://github.com/JakeTheRabbit/HA-Irrigation-Strategy
    Category: Integration
    ```
-   - Click **"ADD"**
-   - Wait for HACS to validate (this may take a few minutes)
+6. Click **"ADD"** and wait for validation
 
-#### Step 2: Install Integration
+**1.2: Install the Integration**
+1. In **HACS** → **Integrations**
+2. Search for **"Crop Steering"**
+3. Click on **"Crop Steering System"**
+4. Click **"DOWNLOAD"**
+5. Select latest version and click **"DOWNLOAD"** again
+6. **RESTART HOME ASSISTANT** when prompted
 
-1. **Find the integration:**
-   - Go to **HACS** → **Integrations**
-   - Search for **"Advanced Crop Steering System"** or **"Crop Steering"**
-   - Click on the integration
+### Step 2: Configure AppDaemon (Required for AI)
 
-2. **Download and install:**
-   - Click **"Download"**
-   - Select the latest version
-   - Click **"Download"** again
-   - **Restart Home Assistant** when prompted
+**⚠️ IMPORTANT:** HACS only installs the basic integration. For AI features, you MUST configure AppDaemon!
 
-#### Step 3: Install Python Dependencies
+**2.1: Create Long-Lived Access Token**
+1. Go to **Settings** → **People** → **Users**
+2. Click your username
+3. Scroll to **"Long-lived access tokens"**
+4. Click **"CREATE TOKEN"**
+5. Name it "AppDaemon Crop Steering"
+6. **COPY THE TOKEN** (you can't see it again!)
 
-```bash
-# SSH into your Home Assistant system
-# For Home Assistant OS:
-ssh root@homeassistant.local
-
-# Install required packages
-pip install numpy pandas plotly scikit-learn scipy
-
-# For Home Assistant Supervised/Container:
-docker exec -it homeassistant bash
-pip install numpy pandas plotly scikit-learn scipy
-```
-
-#### Step 4: Install AppDaemon Apps
-
-```bash
-# Copy AppDaemon configuration
-cd /config
-wget https://raw.githubusercontent.com/JakeTheRabbit/HA-Irrigation-Strategy/main/appdaemon/apps/apps.yaml
-mv apps.yaml /config/appdaemon/apps/
-
-# Download and extract AppDaemon modules
-wget https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/archive/main.zip
-unzip main.zip
-cp -r HA-Irrigation-Strategy-main/appdaemon/apps/crop_steering /config/appdaemon/apps/
-rm -rf HA-Irrigation-Strategy-main main.zip
-```
-
-### Option 2: Manual Installation
-
-For advanced users who prefer manual control.
-
-#### Step 1: Download System
-
-```bash
-# Clone the repository
-git clone https://github.com/JakeTheRabbit/HA-Irrigation-Strategy.git
-cd HA-Irrigation-Strategy
-
-# Or download as ZIP
-wget https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/archive/main.zip
-unzip main.zip
-cd HA-Irrigation-Strategy-main
-```
-
-#### Step 2: Install Integration Files
-
-```bash
-# Copy integration to Home Assistant
-cp -r custom_components/crop_steering /config/custom_components/
-
-# Set proper permissions
-chmod -R 755 /config/custom_components/crop_steering
-chown -R homeassistant:homeassistant /config/custom_components/crop_steering
-```
-
-#### Step 3: Install AppDaemon Apps
-
-```bash
-# Copy AppDaemon configuration
-cp appdaemon/apps/apps.yaml /config/appdaemon/apps/
-cp -r appdaemon/apps/crop_steering /config/appdaemon/apps/
-
-# Set proper permissions
-chmod -R 755 /config/appdaemon/apps/crop_steering
-chown -R homeassistant:homeassistant /config/appdaemon/apps/
-```
-
-#### Step 4: Install Dependencies
-
-```bash
-# Install Python packages
-pip install -r requirements.txt
-
-# Or install individually
-pip install numpy pandas plotly scikit-learn scipy
-```
-
-### Option 3: Docker Installation
-
-For containerized deployments.
-
-#### Step 1: Create Docker Compose
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  homeassistant:
-    container_name: homeassistant
-    image: ghcr.io/home-assistant/home-assistant:stable
-    volumes:
-      - /path/to/config:/config
-      - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
-    privileged: true
-    network_mode: host
-    
-  appdaemon:
-    container_name: appdaemon
-    image: acockburn/appdaemon:latest
-    volumes:
-      - /path/to/config/appdaemon:/conf
-      - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
-    depends_on:
-      - homeassistant
-    environment:
-      - HA_URL=http://localhost:8123
-      - TOKEN=your_long_lived_access_token
-```
-
-#### Step 2: Install System
-
-```bash
-# Start containers
-docker-compose up -d
-
-# Install integration
-docker exec homeassistant bash -c "
-cd /config &&
-wget https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/archive/main.zip &&
-unzip main.zip &&
-cp -r HA-Irrigation-Strategy-main/custom_components/crop_steering custom_components/ &&
-rm -rf HA-Irrigation-Strategy-main main.zip
-"
-
-# Install AppDaemon apps
-docker exec appdaemon bash -c "
-cd /conf &&
-wget https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/archive/main.zip &&
-unzip main.zip &&
-cp -r HA-Irrigation-Strategy-main/appdaemon/apps/* apps/ &&
-rm -rf HA-Irrigation-Strategy-main main.zip
-"
-
-# Install Python dependencies
-docker exec appdaemon pip install numpy pandas plotly scikit-learn scipy
-```
-
-## ⚙️ Configuration
-
-### Step 1: Add Integration
-
-1. **Restart Home Assistant** after installation
-2. **Go to Settings** → **Devices & Services**
-3. **Click "Add Integration"**
-4. **Search for "Crop Steering"** or "Advanced Crop Steering System"
-5. **Click to add the integration**
-
-### Step 2: Configure Sensors
-
-Configure your sensor entities:
-
-```yaml
-# Example configuration
-VWC Sensors (Zone 1):
-- sensor.vwc_r1_front
-- sensor.vwc_r1_back
-
-VWC Sensors (Zone 2):
-- sensor.vwc_r2_front
-- sensor.vwc_r2_back
-
-VWC Sensors (Zone 3):
-- sensor.vwc_r3_front
-- sensor.vwc_r3_back
-
-EC Sensors (Zone 1):
-- sensor.ec_r1_front
-- sensor.ec_r1_back
-
-EC Sensors (Zone 2):
-- sensor.ec_r2_front
-- sensor.ec_r2_back
-
-EC Sensors (Zone 3):
-- sensor.ec_r3_front
-- sensor.ec_r3_back
-```
-
-### Step 3: Configure Hardware
-
-Configure your irrigation hardware:
-
-```yaml
-# Hardware configuration
-Irrigation Pump:
-- switch.f1_irrigation_pump_master_switch
-
-Main Line Valve:
-- switch.espoe_irrigation_relay_1_2
-
-Zone Valves:
-- Zone 1: switch.f1_irrigation_relays_relay_1
-- Zone 2: switch.f1_irrigation_relays_relay_2
-- Zone 3: switch.f1_irrigation_relays_relay_3
-
-Optional Environmental:
-- Temperature: sensor.grow_room_temperature
-- Humidity: sensor.grow_room_humidity
-- VPD: sensor.grow_room_vpd
-```
-
-### Step 4: Configure AppDaemon
-
-1. **Edit AppDaemon configuration:**
+**2.2: Configure AppDaemon**
+1. Go to **Settings** → **Add-ons** → **AppDaemon 4**
+2. Click **Configuration** tab
+3. Replace the configuration with:
    ```yaml
-   # /config/appdaemon/apps/apps.yaml
-   master_crop_steering:
-     module: crop_steering.master_crop_steering_app
-     class: MasterCropSteeringApp
-     dependencies:
-       - crop_steering_dashboard
-     log: crop_steering_master
+   system_packages: []
+   python_packages:
+     - numpy
+     - pandas
+     - plotly
+     - scikit-learn 
+     - scipy
+   init_commands: []
+   ```
+4. Click **SAVE**
+5. Go to **Info** tab and click **START**
+6. Enable **"Start on boot"** and **"Show in sidebar"**
 
-   crop_steering_dashboard:
-     module: crop_steering.advanced_crop_steering_dashboard
-     class: AdvancedCropSteeringDashboard
-     log: crop_steering_dashboard
+**2.3: Configure AppDaemon Connection**
+1. Open **File Editor** from sidebar
+2. Navigate to `/config/appdaemon/appdaemon.yaml`
+3. Replace contents with:
+   ```yaml
+   secrets: /config/secrets.yaml
+   appdaemon:
+     latitude: 40.8939
+     longitude: -74.0455
+     elevation: 100
+     time_zone: America/New_York
+     plugins:
+       HASS:
+         type: hass
+         ha_url: http://homeassistant.local:8123
+         token: YOUR_LONG_LIVED_TOKEN_HERE
+   http:
+     url: http://0.0.0.0:5050
+   admin:
+   api:
+   hadashboard:
+   ```
+4. Replace `YOUR_LONG_LIVED_TOKEN_HERE` with token from step 2.1
+5. Update `time_zone` to your location
+6. Click **SAVE**
+
+### Step 3: Install AI Modules
+
+**3.1: Download AI Files**
+1. Open **File Editor**
+2. Create folder: Click **📁** → **New Folder** → Name it "temp"
+3. In temp folder, create file: **download.yaml**
+4. Paste this content:
+   ```yaml
+   # We'll download the AI files manually
+   # This is easier than using command line
+   ```
+5. **ALTERNATIVE**: Use Samba Share if installed:
+   - Open network location: `\\homeassistant.local\config`
+   - Create "temp" folder
+
+**3.2: Get the Files via Browser**
+1. Go to: https://github.com/JakeTheRabbit/HA-Irrigation-Strategy
+2. Click **"Code"** → **"Download ZIP"**
+3. Extract the ZIP file on your computer
+4. Using **Samba Share** or **File Editor**:
+   - Copy `appdaemon/apps/apps.yaml` to `/config/appdaemon/apps/apps.yaml`
+   - Copy entire `appdaemon/apps/crop_steering/` folder to `/config/appdaemon/apps/crop_steering/`
+   - Copy `crop_steering.env` to `/config/crop_steering.env`
+
+**3.3: Restart AppDaemon**
+1. Go to **Settings** → **Add-ons** → **AppDaemon 4**
+2. Click **RESTART**
+3. Check **Log** tab for "Master Crop Steering Application" startup message
+
+### Step 4: Configure Your Hardware
+
+**4.1: Find Your Entity Names**
+1. Go to **Settings** → **Devices & Services**
+2. Find your irrigation hardware (pumps, valves, sensors)
+3. Click on each device to see entity names
+4. Write down the entity IDs (like `switch.irrigation_pump`)
+
+**4.2: Configure crop_steering.env**
+1. Open **File Editor** from sidebar
+2. Open the file `/config/crop_steering.env`
+3. You'll see configuration like this:
+   ```bash
+   # Find your actual entity names and replace these examples:
+   PUMP_SWITCH=switch.f1_irrigation_pump_master_switch
+   MAIN_LINE_SWITCH=switch.espoe_irrigation_relay_1_2
+   ZONE_1_SWITCH=switch.f1_irrigation_relays_relay_1
+   ```
+4. **Replace with YOUR entity names:**
+   - Use **Developer Tools** → **States** to find exact names
+   - Replace `switch.f1_irrigation_pump_master_switch` with your pump switch
+   - Replace `switch.espoe_irrigation_relay_1_2` with your main valve
+   - Replace zone switches with your zone valves
+
+**4.3: Configure Sensors**
+In the same file, update sensor names:
+```bash
+# VWC Sensors - Replace with your sensor names
+VWC_SENSOR_ZONE_1_FRONT=sensor.vwc_r1_front
+VWC_SENSOR_ZONE_1_BACK=sensor.vwc_r1_back
+
+# EC Sensors - Replace with your sensor names  
+EC_SENSOR_ZONE_1_FRONT=sensor.ec_r1_front
+EC_SENSOR_ZONE_1_BACK=sensor.ec_r1_back
+```
+
+**4.4: Save and Test**
+1. Click **SAVE** in File Editor
+2. Go to **Developer Tools** → **Services**
+3. Test your pump: Call `switch.turn_on` with your pump entity
+4. **IMPORTANT:** Turn it back off after testing!
+
+## ⚙️ Integration Setup
+
+### Step 5: Add the Integration
+
+1. **Restart Home Assistant** (Settings → System → Restart)
+2. After restart, go to **Settings** → **Devices & Services**  
+3. Click **"+ ADD INTEGRATION"** (bottom right)
+4. Search for **"Crop Steering"**
+5. Click **"Crop Steering System"**
+6. Follow the setup wizard:
+   - **Crop Profile**: Choose your plant type (Cannabis_Athena for most users)
+   - **Growth Stage**: Select current stage (Vegetative/Flowering)
+   - **Active Zones**: Enable zones you want to use
+
+### Step 6: Configure Integration Settings
+
+**6.1: Configure Sensors in Integration**
+1. Go to **Settings** → **Devices & Services**
+2. Find **"Crop Steering System"** and click **CONFIGURE**
+3. Enter your sensor entity names:
+   ```
+   VWC Sensors (Zone 1):
+   - sensor.vwc_r1_front
+   - sensor.vwc_r1_back
+   
+   EC Sensors (Zone 1):
+   - sensor.ec_r1_front  
+   - sensor.ec_r1_back
+   
+   (Add more zones as needed)
+   ```
+4. **TIP:** Use the entity names from your .env file
+
+**6.2: Hardware Configuration**
+In the integration setup, configure:
+```
+Pump Switch: switch.your_pump_name
+Main Line Valve: switch.your_main_valve  
+Zone 1 Valve: switch.your_zone_1_valve
+Zone 2 Valve: switch.your_zone_2_valve
+(etc.)
+```
+
+### Step 7: Verify Installation
+
+**7.1: Check Integration Entities**
+1. Go to **Developer Tools** → **States**
+2. Filter by `crop_steering`
+3. You should see entities like:
+   ```
+   sensor.crop_steering_system_state
+   sensor.crop_steering_current_phase  
+   sensor.crop_steering_fused_vwc
+   sensor.crop_steering_ml_confidence
    ```
 
-2. **Create AppDaemon secrets (if needed):**
-   ```yaml
-   # /config/appdaemon/secrets.yaml
-   ha_url: http://homeassistant.local:8123
-   ha_token: your_long_lived_access_token
-   ```
+**7.2: Check AppDaemon Status**
+1. Go to **Settings** → **Add-ons** → **AppDaemon 4**
+2. Click **Log** tab
+3. Look for: `"Master Crop Steering Application initialized!"`
+4. If you see errors, check the troubleshooting section below
 
-3. **Restart AppDaemon**
+**7.3: Test Hardware (OPTIONAL)**
+1. Go to **Developer Tools** → **Services**
+2. **CAREFULLY** test your pump:
+   - Service: `switch.turn_on`
+   - Entity: Your pump entity name
+   - Click **CALL SERVICE**
+   - **IMMEDIATELY turn it back off!**
 
-## 🔧 Initial Configuration
+## ✅ You're Done!
 
-### Step 1: Select Crop Profile
+**Congratulations!** Your Advanced AI Crop Steering System is now installed and ready to use.
 
-1. **Go to integration settings**
-2. **Choose crop profile:**
-   - **Cannabis_Athena**: High-EC Athena methodology
-   - **Cannabis_Indica_Dominant**: Higher moisture, shorter plants
-   - **Cannabis_Sativa_Dominant**: Lower moisture, taller plants
-   - **Cannabis_Balanced_Hybrid**: 50/50 genetics
-   - **Tomato_Hydroponic**: Continuous production
-   - **Lettuce_Leafy_Greens**: Low-stress cultivation
+### What Happens Next?
 
-### Step 2: Set Growth Stage
+1. **Learning Phase** (Week 1-3):
+   - AI models start learning your system
+   - Irrigation becomes more intelligent over time
+   - Monitor the dashboard for improvements
 
-Configure current growth stage:
-- **Seedling**: Young plants, gentle parameters
-- **Vegetative**: Aggressive growth, higher moisture
+2. **Check Your Dashboard**:
+   - Look for `sensor.crop_steering_dashboard_html` entity
+   - Add it to your Home Assistant dashboard
+   - Watch real-time irrigation analytics!
+
+3. **Monitor Performance**:
+   - ML confidence should improve to 80%+ over 2-3 weeks
+   - Irrigation efficiency should increase
+   - Water usage should optimize automatically
+
+### 🎯 Quick Start Guide
+
+1. **Enable the system**: Turn on `switch.crop_steering_system_enabled`
+2. **Monitor sensors**: Check VWC and EC readings are normal
+3. **Watch the AI learn**: ML confidence will improve daily
+4. **Enjoy automation**: System will irrigate intelligently!
+
+## 🔧 Advanced Configuration (Optional)
+
+### Crop Profile Selection
+
+You already chose this during setup, but you can change it:
+
+**Cannabis Profiles:**
+- **Cannabis_Athena**: High-EC Athena methodology (most popular)
+- **Cannabis_Indica_Dominant**: Higher moisture, shorter plants  
+- **Cannabis_Sativa_Dominant**: Lower moisture, taller plants
+- **Cannabis_Balanced_Hybrid**: 50/50 genetics
+
+**Other Crops:**
+- **Tomato_Hydroponic**: Continuous production
+- **Lettuce_Leafy_Greens**: Low-stress cultivation
+
+### Growth Stage Changes
+
+Update as your plants grow:
+- **Seedling**: Gentle parameters for young plants
+- **Vegetative**: Aggressive growth phase
 - **Early Flower**: Transition to flowering
 - **Late Flower**: Maximum generative stress
 
-### Step 3: Configure Zones
-
-Enable and configure active zones:
-```yaml
-Zone Configuration:
-- Zone 1: Active (Main canopy area)
-- Zone 2: Active (Secondary growth area)
-- Zone 3: Inactive (Not currently used)
-
-Substrate Volume (per zone):
-- 10 liters (adjust based on your setup)
-
-Substrate Type:
-- Coco Coir (affects calibration)
-```
-
-## 🧪 Testing & Validation
-
-### Step 1: Sensor Validation
-
-Test all sensors are working:
-
-```bash
-# Check sensor status
-# Go to Developer Tools > States
-# Filter by your sensor entities
-
-# Example expected values:
-sensor.vwc_r1_front: 45-70%
-sensor.ec_r1_front: 2.0-6.0 mS/cm
-sensor.grow_room_temperature: 20-30°C
-```
-
-### Step 2: Hardware Testing
-
-Test irrigation hardware:
-
-1. **Manual Hardware Test:**
-   ```yaml
-   # Test pump
-   service: switch.turn_on
-   target:
-     entity_id: switch.f1_irrigation_pump_master_switch
-   
-   # Test main line (with pump running)
-   service: switch.turn_on
-   target:
-     entity_id: switch.espoe_irrigation_relay_1_2
-   
-   # Test zone valve (with pump and main line on)
-   service: switch.turn_on
-   target:
-     entity_id: switch.f1_irrigation_relays_relay_1
-   ```
-
-2. **Verify sequence:**
-   - Pump starts first
-   - Main line opens
-   - Zone valve opens
-   - Water flows correctly
-   - All valves close in reverse order
-
-### Step 3: AI System Testing
-
-Verify AI modules are working:
-
-```bash
-# Check AppDaemon logs
-tail -f /config/appdaemon/logs/crop_steering_master.log
-
-# Expected startup messages:
-# "Master Crop Steering Application with Advanced AI Features initialized!"
-# "Advanced AI modules initialized successfully"
-# "Intelligent Crop Profiles initialized with X base profiles"
-```
-
-### Step 4: Integration Testing
-
-Verify integration entities:
-
-```yaml
-# Check these entities exist and have values:
-sensor.crop_steering_system_state: active
-sensor.crop_steering_current_phase: P2
-sensor.crop_steering_fused_vwc: 45-70%
-sensor.crop_steering_ml_confidence: 0.3-0.5 (initially)
-sensor.crop_steering_sensor_health: improving
-```
-
-## 📊 Monitoring Setup
-
-### Step 1: Dashboard Creation
-
-Create monitoring dashboard:
-
-```yaml
-# Add to your dashboard
-type: entities
-title: Crop Steering AI System
-entities:
-  - sensor.crop_steering_system_state
-  - sensor.crop_steering_current_phase
-  - sensor.crop_steering_ml_irrigation_need
-  - sensor.crop_steering_fused_vwc
-  - sensor.crop_steering_dryback_percentage
-  - sensor.crop_steering_sensor_health
-```
-
-### Step 2: Alerts Configuration
-
-Set up critical alerts:
-
-```yaml
-# automation.yaml
-- id: crop_steering_emergency
-  alias: Crop Steering Emergency Alert
-  trigger:
-    - platform: numeric_state
-      entity_id: sensor.crop_steering_fused_vwc
-      below: 35
-  action:
-    - service: notify.mobile_app_your_phone
-      data:
-        title: "🚨 Crop Steering Emergency"
-        message: "Critical VWC level: {{ trigger.to_state.state }}%"
-        data:
-          priority: high
-
-- id: crop_steering_ml_confidence_low
-  alias: ML Confidence Low
-  trigger:
-    - platform: numeric_state
-      entity_id: sensor.crop_steering_ml_confidence
-      below: 0.3
-      for: "01:00:00"
-  action:
-    - service: notify.mobile_app_your_phone
-      data:
-        title: "⚠️ ML Confidence Low"
-        message: "ML model confidence below 30%"
-```
-
-### Step 3: Historical Data
-
-Configure data retention:
-
-```yaml
-# configuration.yaml
-recorder:
-  include:
-    entities:
-      - sensor.crop_steering_fused_vwc
-      - sensor.crop_steering_fused_ec
-      - sensor.crop_steering_dryback_percentage
-      - sensor.crop_steering_ml_irrigation_need
-      - sensor.crop_steering_irrigation_efficiency
-      - sensor.crop_steering_sensor_health
-
-influxdb:
-  host: localhost
-  port: 8086
-  database: crop_steering
-  include:
-    entities:
-      - sensor.crop_steering_fused_vwc
-      - sensor.crop_steering_ml_confidence
-      - sensor.crop_steering_irrigation_efficiency
-```
-
-## 🔧 Troubleshooting Installation
-
-### Common Issues
-
-#### Integration Not Found
-
-**Problem**: Can't find integration in HACS or HA
-**Solution**:
-```bash
-# Check integration files exist
-ls -la /config/custom_components/crop_steering/
-
-# Should show:
-# __init__.py
-# manifest.json
-# config_flow.py
-# sensor.py
-# number.py
-# switch.py
-# etc.
-
-# Restart Home Assistant if files are present
-```
-
-#### Python Dependencies Missing
-
-**Problem**: AI features not working, import errors in logs
-**Solution**:
-```bash
-# Install missing packages
-pip install numpy pandas plotly scikit-learn scipy
-
-# For Home Assistant OS/Supervised:
-docker exec homeassistant pip install numpy pandas plotly scikit-learn scipy
-
-# Restart AppDaemon after installation
-```
-
-#### AppDaemon Apps Not Loading
-
-**Problem**: AI modules not starting, no AppDaemon entities
-**Solution**:
-```bash
-# Check AppDaemon logs
-tail -f /config/appdaemon/logs/appdaemon.log
-
-# Common issues:
-# 1. Missing dependencies -> install Python packages
-# 2. File permissions -> fix with chmod/chown
-# 3. Configuration errors -> check apps.yaml syntax
-
-# Fix permissions
-chmod -R 755 /config/appdaemon/apps/crop_steering
-chown -R homeassistant:homeassistant /config/appdaemon/apps/
-```
-
-#### Sensor Configuration Issues
-
-**Problem**: Sensor fusion not working, no fused values
-**Solution**:
-```bash
-# Check sensor entities exist and have valid states
-# Go to Developer Tools > States
-# Filter by your sensor names
-
-# Common issues:
-# 1. Wrong entity names -> update configuration
-# 2. Sensors offline -> check hardware
-# 3. Invalid sensor values -> calibrate sensors
-```
-
-### Performance Issues
-
-#### Slow AI Processing
-
-**Problem**: Long delays in decision making, high CPU usage
-**Solution**:
-```bash
-# Reduce update frequencies
-# In AppDaemon app configuration:
-update_interval = 60  # Increase from 30 seconds
-ml_prediction_interval = 120  # Increase from 60 seconds
-
-# Reduce ML model complexity
-retrain_frequency = 100  # Increase from 50
-```
-
-#### Memory Usage High
-
-**Problem**: High RAM usage, system becoming slow
-**Solution**:
-```bash
-# Reduce data history windows
-history_window = 500  # Reduce from 1000
-max_data_points = 1440  # Reduce from 2880
-
-# Clear old training data periodically
-ml_predictor.reset_models()  # If needed
-```
-
-## 📈 Post-Installation Optimization
-
-### Week 1: Initial Monitoring
-
-- **Monitor sensor fusion reliability**
-- **Check ML model initial learning**
-- **Verify irrigation hardware operation**
-- **Track system stability**
-
-### Week 2: Parameter Tuning
-
-- **Adjust sensor fusion thresholds**
-- **Optimize ML prediction intervals**
-- **Fine-tune crop profile parameters**
-- **Configure alerts and notifications**
-
-### Week 3+: Performance Optimization
-
-- **Analyze ML model performance**
-- **Optimize irrigation efficiency**
-- **Custom crop profile development**
-- **Advanced feature utilization**
-
-## 📞 Support Resources
-
-### Documentation
-- [AI Operation Guide](ai_operation_guide.md)
-- [Dashboard Usage](dashboard_guide.md)
-- [Troubleshooting Guide](troubleshooting.md)
-
-### Community Support
-- **GitHub Issues**: [Report problems](https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/issues)
-- **Home Assistant Forum**: Community discussions
-- **AppDaemon Forum**: Technical AppDaemon questions
-
-### Logs and Diagnostics
-- **Home Assistant Logs**: `/config/home-assistant.log`
-- **AppDaemon Logs**: `/config/appdaemon/logs/`
-- **Integration Logs**: Filter by `crop_steering` in HA logs
-- **System Status**: Check integration device page
+### Zone Configuration
+
+Adjust zone settings in integration configuration:
+- **Zone Volume**: Substrate volume per zone (liters)
+- **Substrate Type**: Affects sensor calibration
+- **Active Zones**: Enable/disable zones as needed
 
 ---
 
-**Installation Complete!** 🎉
+## 🚫 Common Mistakes to Avoid
 
-Your Advanced AI Crop Steering System is now ready to transform your growing operation with intelligent automation and professional-grade analytics.
+### ⚠️ DON'T Skip AppDaemon Setup
+- **HACS only installs the integration**
+- **AI features require AppDaemon configuration**
+- **Missing this = no AI, no dashboard, no advanced features**
+
+### ⚠️ DON'T Forget the Long-Lived Token
+- AppDaemon needs this to communicate with Home Assistant
+- Without it, AI modules won't start
+- Create it BEFORE configuring AppDaemon
+
+### ⚠️ DON'T Use Wrong Entity Names
+- Use **Developer Tools** → **States** to find exact names
+- Copy/paste entity IDs exactly
+- Case-sensitive!
+
+### ⚠️ DON'T Test Hardware Carelessly
+- **ALWAYS** have manual shutoff available
+- **TEST SLOWLY** - start with pump only
+- **TURN OFF IMMEDIATELY** after testing
+- **NEVER** leave irrigation running unattended during setup
+
+
+## 🚫 Troubleshooting
+
+### ❌ Integration Not Found in Home Assistant
+
+**Problem:** Can't find "Crop Steering" in Add Integration
+
+**Solution:**
+1. **Check HACS installation worked:**
+   - File Editor → `/config/custom_components/crop_steering/`
+   - Should contain files like `__init__.py`, `manifest.json`
+2. **If missing:** Re-download from HACS
+3. **Restart Home Assistant** after HACS installation
+
+### ❌ AppDaemon Shows Errors
+
+**Problem:** AppDaemon log shows import errors or Python package errors
+
+**Solution:**
+1. **Check AppDaemon Configuration:**
+   - Settings → Add-ons → AppDaemon 4 → Configuration
+   - Ensure Python packages listed:
+     ```yaml
+     python_packages:
+       - numpy
+       - pandas
+       - plotly
+       - scikit-learn
+       - scipy
+     ```
+2. **Restart AppDaemon** after config changes
+3. **Check logs again** for "Master Crop Steering" startup message
+
+### ❌ No AI Features Working
+
+**Problem:** Integration works but no ML predictions, no advanced dashboard
+
+**Likely Cause:** AppDaemon not configured properly
+
+**Solution:**
+1. **Verify AppDaemon is running:**
+   - Settings → Add-ons → AppDaemon 4 → should show "STARTED"
+2. **Check connection to Home Assistant:**
+   - AppDaemon log should show "Connected to Home Assistant"
+3. **Verify long-lived token is correct**
+4. **Check AI files were copied:**
+   - File Editor → `/config/appdaemon/apps/crop_steering/`
+   - Should contain `.py` files
+
+### ❌ Sensors Not Working
+
+**Problem:** Integration can't find your sensors
+
+**Solution:**
+1. **Find exact entity names:**
+   - Developer Tools → States
+   - Search for your sensor names
+   - Copy the EXACT entity_id
+2. **Update integration configuration:**
+   - Settings → Devices & Services → Crop Steering → Configure
+   - Paste exact entity names
+3. **Check sensors are online:**
+   - Entity should show current value, not "unavailable"
+
+### ❌ Hardware Testing Fails
+
+**Problem:** Pump/valves don't respond to manual tests
+
+**Solution:**
+1. **Check entity names exactly match your hardware**
+2. **Verify devices are powered and connected**
+3. **Test with original Home Assistant controls first**
+4. **Check relay wiring and power supply**
+
+### 📞 Need More Help?
+
+**GitHub Issues:** [Report bugs here](https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/issues)
+
+**Include in your report:**
+- Home Assistant version
+- AppDaemon version  
+- Full error logs
+- Your hardware setup
+- Steps that failed
+
+---
+
+## 🎉 Installation Complete!
+
+**You now have:**
+- ✅ Smart irrigation integration
+- ✅ AI-powered decision making
+- ✅ Real-time monitoring dashboard  
+- ✅ Predictive analytics
+- ✅ Professional-grade automation
+
+### 📚 Next Steps:
+1. **Read the [AI Operation Guide](ai_operation_guide.md)** - Learn how to use your new system
+2. **Check the [Dashboard Guide](dashboard_guide.md)** - Understand the monitoring interface
+3. **Monitor your first week** - Watch the AI learn your system
+
+### 📞 Support:
+- **Problems?** [GitHub Issues](https://github.com/JakeTheRabbit/HA-Irrigation-Strategy/issues)
+- **Questions?** [Home Assistant Community](https://community.home-assistant.io/)
+- **Advanced Help:** [Troubleshooting Guide](troubleshooting.md)
+
+**Enjoy your intelligent irrigation system!** 🌱🤖

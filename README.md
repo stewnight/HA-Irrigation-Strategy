@@ -97,14 +97,11 @@ pip install numpy pandas plotly scikit-learn scipy
    cp -r appdaemon/apps/crop_steering/ /config/appdaemon/apps/
    ```
 
-4. **Configure Integration:**
-   - Go to Settings > Devices & Services
-   - Add "Crop Steering System" integration
-   - Configure your sensor entities
+4. **Add Integration:**
+   - Settings → Devices & Services → Add Integration
+   - Search "Crop Steering" and configure your sensors/hardware
 
-5. **Start AppDaemon Apps:**
-   - Restart AppDaemon to load AI modules
-   - Monitor logs for successful initialization
+**⚠️ Important:** HACS only installs the integration. For AI features, you MUST also install AppDaemon modules. See our [Installation Guide](docs/installation_guide.md) for complete setup.
 
 ### Option 2: Manual Installation
 
