@@ -1,0 +1,27 @@
+# AppDaemon Apps Configuration
+# Advanced Crop Steering System with AI Features
+
+# Master Crop Steering Application
+# Coordinates all advanced modules and handles irrigation decisions
+master_crop_steering:
+  module: crop_steering.master_crop_steering_app
+  class: MasterCropSteeringApp
+  dependencies:
+    - crop_steering_dashboard
+  log: crop_steering_master
+
+# Advanced Dashboard Application  
+# Provides real-time Athena-style monitoring and analytics
+crop_steering_dashboard:
+  module: crop_steering.advanced_crop_steering_dashboard
+  class: AdvancedCropSteeringDashboard
+  log: crop_steering_dashboard
+
+# Configuration for both apps
+global_modules:
+  - requests
+  - numpy
+  - pandas
+  - plotly
+  - scikit-learn
+  - scipy
