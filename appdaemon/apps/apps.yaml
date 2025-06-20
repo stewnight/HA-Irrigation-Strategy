@@ -1,5 +1,8 @@
 # AppDaemon Apps Configuration
 # Advanced Crop Steering System with AI Features
+# 
+# This configuration sets up the complete AI-powered crop steering system
+# All modules work together to provide intelligent irrigation automation
 
 # Master Crop Steering Application
 # Coordinates all advanced modules and handles irrigation decisions
@@ -9,6 +12,7 @@ master_crop_steering:
   dependencies:
     - crop_steering_dashboard
   log: crop_steering_master
+  log_level: INFO
 
 # Advanced Dashboard Application  
 # Provides real-time Athena-style monitoring and analytics
@@ -16,12 +20,46 @@ crop_steering_dashboard:
   module: crop_steering.advanced_crop_steering_dashboard
   class: AdvancedCropSteeringDashboard
   log: crop_steering_dashboard
+  log_level: INFO
 
-# Configuration for both apps
+# Individual Advanced Modules (Optional - included in master app)
+# These can be enabled for standalone testing or modular operation
+
+# Dryback Detection Module
+# dryback_detector:
+#   module: crop_steering.advanced_dryback_detection
+#   class: AdvancedDrybackDetector
+#   log: crop_steering_dryback
+#   log_level: DEBUG
+
+# Sensor Fusion Module  
+# sensor_fusion:
+#   module: crop_steering.intelligent_sensor_fusion
+#   class: IntelligentSensorFusion
+#   log: crop_steering_fusion
+#   log_level: DEBUG
+
+# ML Prediction Module
+# ml_predictor:
+#   module: crop_steering.ml_irrigation_predictor
+#   class: SimplifiedIrrigationPredictor
+#   log: crop_steering_ml
+#   log_level: DEBUG
+
+# Crop Profiles Module
+# crop_profiles:
+#   module: crop_steering.intelligent_crop_profiles
+#   class: IntelligentCropProfiles
+#   log: crop_steering_profiles
+#   log_level: DEBUG
+
+# Global Python modules required by all apps
 global_modules:
   - requests
   - numpy
   - pandas
   - plotly
-  - scikit-learn
   - scipy
+
+# Global configuration
+# All modules read from crop_steering.env file for hardware configuration

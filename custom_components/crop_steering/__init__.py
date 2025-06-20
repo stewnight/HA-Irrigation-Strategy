@@ -2,9 +2,6 @@
 from __future__ import annotations
 
 import logging
-import os
-import shutil
-from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -26,8 +23,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
     
-    # Install package files if they don't exist
-    await _install_package_files(hass)
+    # Note: Package installation removed - system now uses AppDaemon + integration architecture
+    # No package files needed as per v2.0 architecture
     
     # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -37,30 +34,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     return True
 
-async def _install_package_files(hass: HomeAssistant) -> None:
-    """Install package files to the correct location."""
-    config_dir = hass.config.config_dir
-    packages_dir = os.path.join(config_dir, "packages")
-    crop_steering_dir = os.path.join(packages_dir, "CropSteering")
-    
-    # Create packages directory if it doesn't exist
-    os.makedirs(packages_dir, exist_ok=True)
-    
-    # Check if crop steering package already exists
-    if os.path.exists(crop_steering_dir):
-        _LOGGER.info("Crop Steering package already exists")
-        return
-    
-    # Get the path to our integration directory
-    integration_dir = Path(__file__).parent
-    package_source = integration_dir / "packages" / "CropSteering"
-    
-    if package_source.exists():
-        _LOGGER.info("Installing Crop Steering package files")
-        shutil.copytree(package_source, crop_steering_dir)
-        _LOGGER.info("Package files installed successfully")
-    else:
-        _LOGGER.warning("Package source files not found in integration")
+# Note: _install_package_files function removed in v2.0 architecture
+# System now uses AppDaemon modules + integration entities only
+# No package YAML files needed
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
