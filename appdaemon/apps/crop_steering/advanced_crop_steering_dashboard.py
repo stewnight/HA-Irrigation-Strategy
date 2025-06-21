@@ -951,7 +951,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
             self.log(f"❌ Error creating performance graph: {e}", level='ERROR')
             return ""
 
-    async def _get_current_ml_features(self) -> Optional[Dict]:
+    def _get_current_ml_features(self) -> Optional[Dict]:
         """Extract current ML features from system state."""
         try:
             features = {}
@@ -1019,7 +1019,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
         """Update ML predictions and recommendations."""
         try:
             # Get current features
-            features = await self._get_current_ml_features()
+            features = self._get_current_ml_features()
             if not features:
                 return
             
@@ -1105,7 +1105,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
         """Prepare and add ML training sample."""
         try:
             # Get features at time of irrigation
-            features = await self._get_current_ml_features()
+            features = self._get_current_ml_features()
             if not features:
                 return
             

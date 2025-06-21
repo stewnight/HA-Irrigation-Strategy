@@ -75,8 +75,8 @@ class MasterCropSteeringApp(hass.Hass):
             # Build configuration with environment values or fallbacks
             config = {
                 'hardware': {
-                    'pump_master': env_config.get('PUMP_MASTER', 'switch.crop_steering_pump'),
-                    'main_line': env_config.get('IRRIGATION_MAIN_LINE', 'switch.crop_steering_main_line'),
+                    'pump_master': env_config.get('PUMP_SWITCH', 'switch.crop_steering_pump'),
+                    'main_line': env_config.get('MAIN_LINE_SWITCH', 'switch.crop_steering_main_line'),
                     'zone_valves': {}
                 },
                 'sensors': {
@@ -102,15 +102,20 @@ class MasterCropSteeringApp(hass.Hass):
                 }
             }
             
-            # Load zone configurations dynamically
+            # Load zone configurations dynamically from new format
             for key, value in env_config.items():
-                if key.startswith('IRRIGATION_ZONE_'):
-                    zone_num = key.split('_')[-1]
+                # Zone switches (ZONE_1_SWITCH, ZONE_2_SWITCH, etc.)
+                if key.startswith('ZONE_') and key.endswith('_SWITCH') and value:
+                    zone_num = key.split('_')[1]
                     if zone_num.isdigit():
                         config['hardware']['zone_valves'][int(zone_num)] = value
-                elif key.startswith('VWC_SENSOR_'):
+                
+                # VWC sensors (ZONE_1_VWC_FRONT, ZONE_1_VWC_BACK, etc.)
+                elif key.startswith('ZONE_') and '_VWC_' in key and value:
                     config['sensors']['vwc'].append(value)
-                elif key.startswith('EC_SENSOR_'):
+                
+                # EC sensors (ZONE_1_EC_FRONT, ZONE_1_EC_BACK, etc.)
+                elif key.startswith('ZONE_') and '_EC_' in key and value:
                     config['sensors']['ec'].append(value)
             
             # Sort sensor lists for consistency
@@ -120,6 +125,9 @@ class MasterCropSteeringApp(hass.Hass):
             self.log(f"Configuration loaded: {len(config['sensors']['vwc'])} VWC sensors, "
                     f"{len(config['sensors']['ec'])} EC sensors, "
                     f"{len(config['hardware']['zone_valves'])} zones")
+            self.log(f"VWC Sensors: {config['sensors']['vwc']}")
+            self.log(f"EC Sensors: {config['sensors']['ec']}")
+            self.log(f"Zone Valves: {config['hardware']['zone_valves']}")
             
             return config
             
@@ -518,14 +526,26 @@ class MasterCropSteeringApp(hass.Hass):
             ec_sensors = {}
             
             for sensor in self.config['sensors']['vwc']:
-                value = self.get_state(sensor)
-                if value not in ['unavailable', 'unknown', None]:
-                    vwc_sensors[sensor] = float(value)
+                try:
+                    value = self.get_state(sensor)
+                    if value not in ['unavailable', 'unknown', None, '']:
+                        vwc_sensors[sensor] = float(value)
+                        self.log(f"✓ VWC sensor {sensor}: {value}")
+                    else:
+                        self.log(f"⚠️ VWC sensor {sensor} unavailable: {value}", level='WARNING')
+                except Exception as e:
+                    self.log(f"❌ Error reading VWC sensor {sensor}: {e}", level='ERROR')
             
             for sensor in self.config['sensors']['ec']:
-                value = self.get_state(sensor)
-                if value not in ['unavailable', 'unknown', None]:
-                    ec_sensors[sensor] = float(value)
+                try:
+                    value = self.get_state(sensor)
+                    if value not in ['unavailable', 'unknown', None, '']:
+                        ec_sensors[sensor] = float(value)
+                        self.log(f"✓ EC sensor {sensor}: {value}")
+                    else:
+                        self.log(f"⚠️ EC sensor {sensor} unavailable: {value}", level='WARNING')
+                except Exception as e:
+                    self.log(f"❌ Error reading EC sensor {sensor}: {e}", level='ERROR')
             
             if not vwc_sensors:
                 self.log("⚠️ No VWC sensors available", level='WARNING')
