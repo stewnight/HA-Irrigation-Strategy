@@ -16,11 +16,18 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import pandas as pd
 
-# Import our advanced modules
-from .advanced_dryback_detection import AdvancedDrybackDetector
-from .intelligent_sensor_fusion import IntelligentSensorFusion
-from .ml_irrigation_predictor import SimplifiedIrrigationPredictor, MLIrrigationPredictor
-from .intelligent_crop_profiles import IntelligentCropProfiles
+# Import our advanced modules with fallback
+try:
+    from .advanced_dryback_detection import AdvancedDrybackDetector
+    from .intelligent_sensor_fusion import IntelligentSensorFusion
+    from .ml_irrigation_predictor import SimplifiedIrrigationPredictor, MLIrrigationPredictor
+    from .intelligent_crop_profiles import IntelligentCropProfiles
+except ImportError:
+    # Fallback for direct execution or import issues
+    from advanced_dryback_detection import AdvancedDrybackDetector
+    from intelligent_sensor_fusion import IntelligentSensorFusion
+    from ml_irrigation_predictor import SimplifiedIrrigationPredictor, MLIrrigationPredictor
+    from intelligent_crop_profiles import IntelligentCropProfiles
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -13,12 +13,18 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import numpy as np
 
-# Import our advanced modules
-from .advanced_dryback_detection import AdvancedDrybackDetector
-from .intelligent_sensor_fusion import IntelligentSensorFusion
-from .ml_irrigation_predictor import SimplifiedIrrigationPredictor
-from .intelligent_crop_profiles import IntelligentCropProfiles
-from .advanced_crop_steering_dashboard import AdvancedCropSteeringDashboard
+# Import our advanced modules with fallback
+try:
+    from .advanced_dryback_detection import AdvancedDrybackDetector
+    from .intelligent_sensor_fusion import IntelligentSensorFusion
+    from .ml_irrigation_predictor import SimplifiedIrrigationPredictor
+    from .intelligent_crop_profiles import IntelligentCropProfiles
+except ImportError:
+    # Fallback for direct execution or import issues
+    from advanced_dryback_detection import AdvancedDrybackDetector
+    from intelligent_sensor_fusion import IntelligentSensorFusion
+    from ml_irrigation_predictor import SimplifiedIrrigationPredictor
+    from intelligent_crop_profiles import IntelligentCropProfiles
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1049,15 +1055,15 @@ class MasterCropSteeringApp(hass.Hass):
         try:
             self.log(f"🚨 Critical EC level handling: {ec_level:.2f} mS/cm")
             
-            # Could trigger flush sequence or alert
-            # For now, just log and alert
+            # Alert via configured notification service
             notification_service = self.config.get('notification_service', 'notify.persistent_notification')
-            if notification_service and notification_service != 'notify.mobile_app_your_phone':
-                try:
-                    self.call_service(notification_service.replace('.', '/'), 
-                                    message=f"Critical EC level detected: {ec_level:.2f} mS/cm")
-                except:
-                    self.log(f"📱 Critical EC Alert: {ec_level:.2f} mS/cm (notification service unavailable)")
+            try:
+                if notification_service and notification_service.startswith('notify.'):
+                    service_name = notification_service.replace('.', '/')
+                    self.call_service(service_name, 
+                                    message=f"🚨 Critical EC level detected: {ec_level:.2f} mS/cm")
+                else:
+                    self.log(f"📱 Critical EC Alert: {ec_level:.2f} mS/cm")
             
         except Exception as e:
             self.log(f"❌ Error handling critical EC: {e}", level='ERROR')
@@ -1199,8 +1205,8 @@ class MasterCropSteeringApp(hass.Hass):
             
             # ML model performance
             ml_status = self.ml_predictor.get_model_status()
-            if ml_status['models_trained']:
-                metrics['ml_model_accuracy'] = ml_status['model_performance'].get('ensemble', {}).get('r2', 0)
+            if ml_status.get('trained', False):
+                metrics['ml_model_accuracy'] = ml_status.get('model_accuracy', 0.0)
             
             # Sensor fusion performance
             health_report = self.sensor_fusion.get_sensor_health_report()
@@ -1349,8 +1355,22 @@ class MasterCropSteeringApp(hass.Hass):
     def terminate(self):
         """Clean shutdown of master application."""
         try:
-            # Emergency stop irrigation
-            asyncio.create_task(self._emergency_stop())
+            # Emergency stop irrigation - sync version for shutdown
+            try:
+                pump_entity = self.config['hardware']['pump_master']
+                main_line_entity = self.config['hardware']['main_line']
+                
+                # Turn off hardware synchronously during shutdown
+                self.turn_off(pump_entity)
+                self.turn_off(main_line_entity)
+                
+                for zone_valve in self.config['hardware']['zone_valves'].values():
+                    self.turn_off(zone_valve)
+                    
+                self.log("🛑 Emergency stop executed during shutdown")
+                    
+            except Exception as stop_error:
+                self.log(f"⚠️ Could not emergency stop during shutdown: {stop_error}")
             
             self.log("🛑 Master Crop Steering Application terminated")
             

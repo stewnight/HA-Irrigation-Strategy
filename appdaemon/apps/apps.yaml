@@ -53,13 +53,14 @@ crop_steering_dashboard:
 #   log: crop_steering_profiles
 #   log_level: DEBUG
 
-# Global Python modules required by all apps
-global_modules:
-  - requests
-  - numpy
-  - pandas
-  - plotly
-  - scipy
+# Global Python modules (deprecated but required for compatibility)
+# Individual apps will import these locally instead
+#global_modules:
+#  - requests
+#  - numpy  
+#  - pandas
+#  - plotly
+#  - scipy
 
 # Global configuration
 # All modules read from crop_steering.env file for hardware configuration
