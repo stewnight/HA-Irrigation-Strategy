@@ -99,7 +99,8 @@ class MasterCropSteeringApp(hass.Hass):
                     'critical_ec': float(env_config.get('MAX_EC_THRESHOLD', '8.0')),
                     'max_irrigation_duration': int(env_config.get('MAX_IRRIGATION_DURATION', '300')),
                     'min_irrigation_interval': int(env_config.get('MIN_IRRIGATION_INTERVAL', '900'))
-                }
+                },
+                'notification_service': env_config.get('NOTIFICATION_SERVICE', 'notify.persistent_notification')
             }
             
             # Load zone configurations dynamically from new format
@@ -125,9 +126,15 @@ class MasterCropSteeringApp(hass.Hass):
             self.log(f"Configuration loaded: {len(config['sensors']['vwc'])} VWC sensors, "
                     f"{len(config['sensors']['ec'])} EC sensors, "
                     f"{len(config['hardware']['zone_valves'])} zones")
-            self.log(f"VWC Sensors: {config['sensors']['vwc']}")
-            self.log(f"EC Sensors: {config['sensors']['ec']}")
-            self.log(f"Zone Valves: {config['hardware']['zone_valves']}")
+            self.log(f"🔍 DEBUG VWC Sensors: {config['sensors']['vwc']}")
+            self.log(f"🔍 DEBUG EC Sensors: {config['sensors']['ec']}")
+            self.log(f"🔍 DEBUG Zone Valves: {config['hardware']['zone_valves']}")
+            
+            # Test reading one sensor directly for debugging
+            if config['sensors']['vwc']:
+                test_sensor = config['sensors']['vwc'][0]
+                test_value = self.get_state(test_sensor)
+                self.log(f"🔍 DEBUG Test read {test_sensor}: {test_value}")
             
             return config
             
@@ -528,6 +535,7 @@ class MasterCropSteeringApp(hass.Hass):
             for sensor in self.config['sensors']['vwc']:
                 try:
                     value = self.get_state(sensor)
+                    self.log(f"🔍 DEBUG: Reading VWC sensor {sensor} = {value} (type: {type(value)})")
                     if value not in ['unavailable', 'unknown', None, '']:
                         vwc_sensors[sensor] = float(value)
                         self.log(f"✓ VWC sensor {sensor}: {value}")
@@ -539,6 +547,7 @@ class MasterCropSteeringApp(hass.Hass):
             for sensor in self.config['sensors']['ec']:
                 try:
                     value = self.get_state(sensor)
+                    self.log(f"🔍 DEBUG: Reading EC sensor {sensor} = {value} (type: {type(value)})")
                     if value not in ['unavailable', 'unknown', None, '']:
                         ec_sensors[sensor] = float(value)
                         self.log(f"✓ EC sensor {sensor}: {value}")
@@ -996,8 +1005,13 @@ class MasterCropSteeringApp(hass.Hass):
             
             # Could trigger flush sequence or alert
             # For now, just log and alert
-            self.call_service('notify/mobile_app_your_phone', 
-                            message=f"Critical EC level detected: {ec_level:.2f} mS/cm")
+            notification_service = self.config.get('notification_service', 'notify.persistent_notification')
+            if notification_service and notification_service != 'notify.mobile_app_your_phone':
+                try:
+                    self.call_service(notification_service.replace('.', '/'), 
+                                    message=f"Critical EC level detected: {ec_level:.2f} mS/cm")
+                except:
+                    self.log(f"📱 Critical EC Alert: {ec_level:.2f} mS/cm (notification service unavailable)")
             
         except Exception as e:
             self.log(f"❌ Error handling critical EC: {e}", level='ERROR')
