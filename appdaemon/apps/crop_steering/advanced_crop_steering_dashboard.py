@@ -336,32 +336,32 @@ class AdvancedCropSteeringDashboard(hass.Hass):
         
         try:
             # 1. VWC Trending Graph (Main Athena Style)
-            graphs['vwc_trending'] = await self._create_vwc_trending_graph()
+            graphs['vwc_trending'] = self._create_vwc_trending_graph()
             
             # 2. EC Trending Graph
-            graphs['ec_trending'] = await self._create_ec_trending_graph()
+            graphs['ec_trending'] = self._create_ec_trending_graph()
             
             # 3. Dryback Analysis Graph
-            graphs['dryback_analysis'] = await self._create_dryback_analysis_graph()
+            graphs['dryback_analysis'] = self._create_dryback_analysis_graph()
             
             # 4. ML Predictions Graph
-            graphs['ml_predictions'] = await self._create_ml_predictions_graph()
+            graphs['ml_predictions'] = self._create_ml_predictions_graph()
             
             # 5. Sensor Health Heatmap
-            graphs['sensor_health'] = await self._create_sensor_health_graph()
+            graphs['sensor_health'] = self._create_sensor_health_graph()
             
             # 6. Phase Timeline
-            graphs['phase_timeline'] = await self._create_phase_timeline_graph()
+            graphs['phase_timeline'] = self._create_phase_timeline_graph()
             
             # 7. Performance Analytics
-            graphs['performance_analytics'] = await self._create_performance_graph()
+            graphs['performance_analytics'] = self._create_performance_graph()
             
         except Exception as e:
             self.log(f"❌ Error generating graphs: {e}", level='ERROR')
         
         return graphs
 
-    async def _create_vwc_trending_graph(self) -> str:
+    def _create_vwc_trending_graph(self) -> str:
         """Create Athena-style VWC trending graph."""
         try:
             if not self.dashboard_data['vwc_history']:
@@ -498,7 +498,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
             self.log(f"❌ Error creating VWC graph: {e}", level='ERROR')
             return ""
 
-    async def _create_ec_trending_graph(self) -> str:
+    def _create_ec_trending_graph(self) -> str:
         """Create EC trending graph with target zones."""
         try:
             if not self.dashboard_data['ec_history']:
@@ -571,7 +571,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
             self.log(f"❌ Error creating EC graph: {e}", level='ERROR')
             return ""
 
-    async def _create_dryback_analysis_graph(self) -> str:
+    def _create_dryback_analysis_graph(self) -> str:
         """Create advanced dryback analysis visualization."""
         try:
             if not self.dashboard_data['dryback_history']:
@@ -639,11 +639,11 @@ class AdvancedCropSteeringDashboard(hass.Hass):
             self.log(f"❌ Error creating dryback graph: {e}", level='ERROR')
             return ""
 
-    async def _create_ml_predictions_graph(self) -> str:
+    def _create_ml_predictions_graph(self) -> str:
         """Create ML irrigation predictions visualization."""
         try:
             # Get current ML predictions
-            current_features = await self._get_current_ml_features()
+            current_features = self._get_current_ml_features()
             if not current_features:
                 return ""
             
@@ -728,7 +728,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
             self.log(f"❌ Error creating ML predictions graph: {e}", level='ERROR')
             return ""
 
-    async def _create_sensor_health_graph(self) -> str:
+    def _create_sensor_health_graph(self) -> str:
         """Create sensor health status heatmap."""
         try:
             health_report = self.sensor_fusion.get_sensor_health_report()
@@ -794,7 +794,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
             self.log(f"❌ Error creating sensor health graph: {e}", level='ERROR')
             return ""
 
-    async def _create_phase_timeline_graph(self) -> str:
+    def _create_phase_timeline_graph(self) -> str:
         """Create irrigation phase timeline visualization."""
         try:
             if not self.dashboard_data['phase_history']:
@@ -848,7 +848,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
             self.log(f"❌ Error creating phase timeline graph: {e}", level='ERROR')
             return ""
 
-    async def _create_performance_graph(self) -> str:
+    def _create_performance_graph(self) -> str:
         """Create system performance analytics visualization."""
         try:
             if not self.dashboard_data['performance_metrics']:

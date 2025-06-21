@@ -380,9 +380,9 @@ class MasterCropSteeringApp(hass.Hass):
                 dryback_result = self.dryback_detector.add_vwc_reading(
                     vwc_value, timestamp
                 )
-                    
-                    # Update HA entities with dryback data
-                    self._update_dryback_entities(dryback_result)
+                
+                # Update HA entities with dryback data
+                self._update_dryback_entities(dryback_result)
                 
                 # Update fusion entities
                 self._update_sensor_fusion_entities(entity, fusion_result)
