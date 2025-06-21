@@ -1003,11 +1003,30 @@ class AdvancedCropSteeringDashboard(hass.Hass):
                 features['dryback_percentage'] = latest_dryback['dryback_percentage']
                 features['dryback_rate'] = latest_dryback.get('dryback_rate', 0)
             
-            # Environmental data
-            features['temperature'] = float(self.get_state(self.sensor_entities['environmental']['temperature'], default=25))
-            features['humidity'] = float(self.get_state(self.sensor_entities['environmental']['humidity'], default=60))
-            features['vpd'] = float(self.get_state(self.sensor_entities['environmental']['vpd'], default=1.0))
-            features['lights_on'] = self.get_state('sun.sun', attribute='elevation', default=0) > 0
+            # Environmental data - handle async state safely
+            try:
+                temp_state = self.get_state(self.sensor_entities['environmental']['temperature'])
+                features['temperature'] = float(temp_state) if temp_state not in ['unavailable', 'unknown', None] else 25.0
+            except (ValueError, TypeError):
+                features['temperature'] = 25.0
+                
+            try:
+                hum_state = self.get_state(self.sensor_entities['environmental']['humidity'])
+                features['humidity'] = float(hum_state) if hum_state not in ['unavailable', 'unknown', None] else 60.0
+            except (ValueError, TypeError):
+                features['humidity'] = 60.0
+                
+            try:
+                vpd_state = self.get_state(self.sensor_entities['environmental']['vpd'])
+                features['vpd'] = float(vpd_state) if vpd_state not in ['unavailable', 'unknown', None] else 1.0
+            except (ValueError, TypeError):
+                features['vpd'] = 1.0
+                
+            try:
+                elev_state = self.get_state('sun.sun', attribute='elevation')
+                features['lights_on'] = float(elev_state) > 0 if elev_state not in ['unavailable', 'unknown', None] else False
+            except (ValueError, TypeError):
+                features['lights_on'] = False
             
             return features
             

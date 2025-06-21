@@ -585,10 +585,24 @@ class MasterCropSteeringApp(hass.Hass):
                 self.log("⚠️ No VWC sensors available", level='WARNING')
                 return None
             
-            # Get environmental data
-            temperature = float(self.get_state(self.config['sensors']['environmental']['temperature'], default=25))
-            humidity = float(self.get_state(self.config['sensors']['environmental']['humidity'], default=60))
-            vpd = float(self.get_state(self.config['sensors']['environmental']['vpd'], default=1.0))
+            # Get environmental data - handle async properly
+            try:
+                temp_state = self.get_state(self.config['sensors']['environmental']['temperature'])
+                temperature = float(temp_state) if temp_state not in ['unavailable', 'unknown', None] else 25.0
+            except (ValueError, TypeError):
+                temperature = 25.0
+                
+            try:
+                hum_state = self.get_state(self.config['sensors']['environmental']['humidity'])
+                humidity = float(hum_state) if hum_state not in ['unavailable', 'unknown', None] else 60.0
+            except (ValueError, TypeError):
+                humidity = 60.0
+                
+            try:
+                vpd_state = self.get_state(self.config['sensors']['environmental']['vpd'])
+                vpd = float(vpd_state) if vpd_state not in ['unavailable', 'unknown', None] else 1.0
+            except (ValueError, TypeError):
+                vpd = 1.0
             
             avg_vwc = np.mean(list(vwc_sensors.values())) if vwc_sensors else 0
             avg_ec = np.mean(list(ec_sensors.values())) if ec_sensors else 3.0
