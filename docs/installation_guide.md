@@ -116,35 +116,41 @@ This step-by-step guide will help you install the Advanced AI Crop Steering Syst
 5. Name it "AppDaemon Crop Steering"
 6. **COPY THE TOKEN** (you can't see it again!)
 
-**2.2: Configure AppDaemon**
+**2.2: Fix AppDaemon Requirements (CRITICAL!)**
 1. Go to **Settings** → **Add-ons** → **AppDaemon 4**
 2. Click **Configuration** tab
 3. Replace the configuration with:
    ```yaml
    system_packages: []
    python_packages:
-     - numpy
-     - pandas
-     - plotly
-     - scikit-learn 
-     - scipy
+     - numpy>=1.21.0
+     - pandas>=1.3.0
+     - plotly>=5.0.0
+     - scipy>=1.7.0
+     - requests>=2.25.0
    init_commands: []
    ```
-4. Click **SAVE**
-5. Go to **Info** tab and click **START**
-6. Enable **"Start on boot"** and **"Show in sidebar"**
+4. **NOTE:** We removed scikit-learn to prevent compilation errors!
+5. Click **SAVE**
+6. Go to **Info** tab and click **START**
+7. Enable **"Start on boot"** and **"Show in sidebar"
 
-**2.3: Configure AppDaemon Connection**
-1. Open **File Editor** from sidebar
-2. Navigate to `/config/appdaemon/appdaemon.yaml`
+**2.3: Configure AppDaemon Connection (Updated Paths!)**
+
+⚠️ **IMPORTANT:** AppDaemon v15+ uses new directory structure!
+
+1. **Access AppDaemon config** via Samba Share: `\\YOUR_HA_IP\addon_configs\a0d7b954_appdaemon`
+   - Or use SSH: `/addon_configs/a0d7b954_appdaemon/`
+2. Edit the file: `appdaemon.yaml`
 3. Replace contents with:
    ```yaml
-   secrets: /config/secrets.yaml
+   secrets: /homeassistant/secrets.yaml
    appdaemon:
      latitude: 40.8939
      longitude: -74.0455
      elevation: 100
      time_zone: America/New_York
+     app_dir: /homeassistant/addon_configs/a0d7b954_appdaemon/apps
      plugins:
        HASS:
          type: hass
@@ -156,9 +162,9 @@ This step-by-step guide will help you install the Advanced AI Crop Steering Syst
    api:
    hadashboard:
    ```
-4. Replace `YOUR_LONG_LIVED_TOKEN_HERE` with token from step 2.1
-5. Update `time_zone` to your location
-6. Click **SAVE**
+4. **Replace `YOUR_LONG_LIVED_TOKEN_HERE`** with your actual token
+5. **Update location settings** to your coordinates and timezone
+6. **Save the file**
 
 ### Step 3: Configure Your Zones (NEW - Easy Setup!)
 
@@ -186,10 +192,26 @@ This step-by-step guide will help you install the Advanced AI Crop Steering Syst
    - Configure VWC and EC sensors for each zone
    - The script validates everything and updates your config
 
-**3.3: Install AppDaemon AI Modules**
-1. Using **Samba Share** or **File Editor**:
-   - Copy `appdaemon/apps/apps.yaml` to `/config/appdaemon/apps/apps.yaml`
-   - Copy entire `appdaemon/apps/crop_steering/` folder to `/config/appdaemon/apps/crop_steering/`
+**3.3: Install AppDaemon AI Modules (Updated Paths!)**
+
+⚠️ **CRITICAL:** Use the NEW AppDaemon v15+ paths!
+
+1. **Access via Samba Share**: `\\YOUR_HA_IP\addon_configs\a0d7b954_appdaemon\apps`
+   - Copy `appdaemon/apps/apps.yaml` to `\addon_configs\a0d7b954_appdaemon\apps\apps.yaml`
+   - Copy entire `appdaemon/apps/crop_steering/` folder to `\addon_configs\a0d7b954_appdaemon\apps\crop_steering\`
+
+2. **Alternative - SSH Method**:
+   ```bash
+   # Copy to correct AppDaemon v15+ location
+   mkdir -p /addon_configs/a0d7b954_appdaemon/apps
+   cp apps.yaml /addon_configs/a0d7b954_appdaemon/apps/
+   cp -r crop_steering /addon_configs/a0d7b954_appdaemon/apps/
+   ```
+
+3. **File Structure Check**: Verify you have:
+   - `/addon_configs/a0d7b954_appdaemon/apps/apps.yaml`
+   - `/addon_configs/a0d7b954_appdaemon/apps/crop_steering/master_crop_steering_app.py`
+   - Plus other AI module files
 
 **3.4: Restart AppDaemon**
 1. Go to **Settings** → **Add-ons** → **AppDaemon 4**

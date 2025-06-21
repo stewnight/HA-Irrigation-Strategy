@@ -5,6 +5,35 @@ All notable changes to the Advanced AI Crop Steering System will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2024-12-21
+
+### 🔄 AppDaemon v15+ Compatibility Update
+- **Updated all documentation** for AppDaemon v15+ directory changes
+- **Fixed file paths** from `/config/appdaemon/` to `/addon_configs/a0d7b954_appdaemon/`
+- **Enhanced fix script** to auto-detect AppDaemon version and paths
+- **Added migration guide** for upgrading from AppDaemon v14 to v15+
+- **Updated installation instructions** with correct Samba share paths
+
+### 📝 Documentation Updates
+- `docs/installation_guide.md` - Updated for AppDaemon v15+ paths
+- `docs/appdaemon_v15_migration.md` - NEW comprehensive migration guide
+- `docs/dynamic_zones_guide.md` - Added AppDaemon v15+ compatibility notes
+- `fix_appdaemon_requirements.sh` - Enhanced to handle both old and new paths
+- `README.md` - Updated setup instructions for AppDaemon v15+
+
+### 🔧 Technical Changes
+- **Auto-detection** of AppDaemon directory structure in scripts
+- **Backward compatibility** maintained for AppDaemon v14 and earlier
+- **Improved error messages** for missing AppDaemon directories
+- **Updated Samba share paths** in all documentation
+
+### ⚠️ Important Notes
+- **If using AppDaemon v15+**: Files are now in `/addon_configs/a0d7b954_appdaemon/`
+- **Samba access**: Use `\\YOUR_HA_IP\addon_configs\a0d7b954_appdaemon`
+- **Migration required**: Run updated scripts to move files to correct locations
+
+---
+
 ## [2.1.0] - 2024-12-21
 
 ### 🚀 Major Features Added

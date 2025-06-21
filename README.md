@@ -125,9 +125,10 @@
 
 3. **Configure AppDaemon (Required for AI):**
    - Install AppDaemon 4 add-on
-   - Follow our [Installation Guide](docs/installation_guide.md) for AI setup
+   - **NEW v15+ Path:** `/addon_configs/a0d7b954_appdaemon/`
+   - Follow our [Installation Guide](docs/installation_guide.md) for complete setup
 
-**⚠️ Important:** HACS only installs the basic integration. The AI features require additional AppDaemon configuration detailed in our installation guide.
+**⚠️ Important:** HACS only installs the basic integration. The AI features require AppDaemon configuration with updated v15+ directory paths.
 
 ## ⚙️ Configuration
 
@@ -151,13 +152,17 @@
    - Search "Crop Steering" → Select "Manual Zone Configuration"
    - Choose number of zones (1-6) → Configure zone switches
 
-### 🔧 AppDaemon Setup
-1. **Fix Requirements (Important!):**
+### 🔧 AppDaemon Setup (v15+ Updated Paths)
+1. **Fix Requirements (Critical!):**
    ```bash
    ./fix_appdaemon_requirements.sh
    ```
-2. **Restart AppDaemon add-on**
-3. **AI Features Activate Automatically:**
+2. **Configure with NEW paths:**
+   - AppDaemon config: `/addon_configs/a0d7b954_appdaemon/appdaemon.yaml`
+   - Apps directory: `/addon_configs/a0d7b954_appdaemon/apps/`
+   - Access via Samba: `\\YOUR_HA_IP\addon_configs\a0d7b954_appdaemon`
+3. **Restart AppDaemon add-on**
+4. **AI Features Activate Automatically:**
    - Machine learning models start learning immediately
    - Sensor fusion begins with first readings
    - Dashboard becomes available
@@ -304,6 +309,7 @@ This system has undergone comprehensive testing and validation:
 - 🧠 [AI Operation Guide](docs/ai_operation_guide.md) - How to use the intelligent features
 - 📊 [Dashboard Guide](docs/dashboard_guide.md) - Understanding the monitoring interface
 - 🎯 [Dynamic Zones Guide](docs/dynamic_zones_guide.md) - Configure 1-6 zones easily (NEW)
+- 🔄 [AppDaemon v15+ Migration](docs/appdaemon_v15_migration.md) - Updated directory paths (NEW)
 - 🔧 [Troubleshooting Guide](docs/troubleshooting.md) - Fix common issues
 
 ## 🔧 Advanced Configuration

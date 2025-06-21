@@ -153,6 +153,12 @@ If getting sensor errors:
 - Ensure good sensor-to-substrate contact
 - Calibrate sensors before use
 
+### AppDaemon v15+ File Locations
+- **AI Modules**: `/addon_configs/a0d7b954_appdaemon/apps/crop_steering/`
+- **Configuration**: `/addon_configs/a0d7b954_appdaemon/appdaemon.yaml`
+- **Apps Config**: `/addon_configs/a0d7b954_appdaemon/apps/apps.yaml`
+- **Samba Access**: `\\YOUR_HA_IP\addon_configs\a0d7b954_appdaemon`
+
 ### Zone Configuration
 - Start with fewer zones and expand as needed
 - Group plants with similar water needs in same zone
@@ -194,6 +200,17 @@ ZONE_3_SWITCH=switch.flower2_valve
 ZONE_3_VWC_FRONT=sensor.f2_vwc_front
 ZONE_3_EC_FRONT=sensor.f2_ec_front
 ```
+
+## AppDaemon v15+ Compatibility
+
+The system is fully compatible with AppDaemon v15+ directory changes:
+
+- **Updated paths** automatically detected
+- **Migration tools** available for upgrading
+- **Backward compatibility** with older AppDaemon versions
+- **Fix script** handles both old and new directory structures
+
+See [AppDaemon v15+ Migration Guide](appdaemon_v15_migration.md) for detailed migration instructions.
 
 ## Future Enhancements
 
