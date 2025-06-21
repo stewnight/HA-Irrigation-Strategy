@@ -373,8 +373,16 @@ class MasterCropSteeringApp(hass.Hass):
                 # Update fusion entities
                 self._update_sensor_fusion_entities(entity, fusion_result)
                 
-                # Check for emergency conditions
-                await self._check_emergency_conditions(fusion_result['fused_value'])
+                # Get current sensor data for emergency check
+                sensor_data = self._get_current_sensor_data()
+                if sensor_data:
+                    # Use direct average instead of fusion result for now
+                    direct_vwc = sensor_data['average_vwc']
+                    self.log(f"🔍 DEBUG Emergency check: fusion={fusion_result['fused_value']:.1f}%, direct={direct_vwc:.1f}%")
+                    await self._check_emergency_conditions(direct_vwc)
+                else:
+                    # Fallback to fusion result
+                    await self._check_emergency_conditions(fusion_result['fused_value'])
                 
                 # Log significant changes
                 if fusion_result['is_outlier']:
@@ -565,11 +573,18 @@ class MasterCropSteeringApp(hass.Hass):
             humidity = float(self.get_state(self.config['sensors']['environmental']['humidity'], default=60))
             vpd = float(self.get_state(self.config['sensors']['environmental']['vpd'], default=1.0))
             
+            avg_vwc = np.mean(list(vwc_sensors.values())) if vwc_sensors else 0
+            avg_ec = np.mean(list(ec_sensors.values())) if ec_sensors else 3.0
+            
+            self.log(f"🔍 DEBUG Calculated averages: VWC={avg_vwc:.2f}%, EC={avg_ec:.2f} mS/cm")
+            self.log(f"🔍 DEBUG VWC values: {list(vwc_sensors.values())}")
+            self.log(f"🔍 DEBUG EC values: {list(ec_sensors.values())}")
+            
             return {
                 'vwc_sensors': vwc_sensors,
                 'ec_sensors': ec_sensors,
-                'average_vwc': np.mean(list(vwc_sensors.values())),
-                'average_ec': np.mean(list(ec_sensors.values())) if ec_sensors else 3.0,
+                'average_vwc': avg_vwc,
+                'average_ec': avg_ec,
                 'temperature': temperature,
                 'humidity': humidity,
                 'vpd': vpd,
