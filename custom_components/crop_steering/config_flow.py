@@ -14,7 +14,15 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    CONF_NUM_ZONES,
+    CONF_ENV_FILE_PATH,
+    MIN_ZONES,
+    MAX_ZONES,
+    DEFAULT_NUM_ZONES,
+)
+from .zone_config import ZoneConfigParser
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,30 +32,46 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("installation_mode", default="auto"): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=[
-                    {"value": "auto", "label": "Automatic Setup (Recommended)"},
-                    {"value": "manual", "label": "Manual Configuration"},
+                    {"value": "auto", "label": "Load from crop_steering.env (Recommended)"},
+                    {"value": "manual", "label": "Manual Zone Configuration"},
                 ]
             )
         ),
     }
 )
 
-STEP_MANUAL_DATA_SCHEMA = vol.Schema(
-    {
+def get_zone_schema(num_zones: int) -> vol.Schema:
+    """Generate zone configuration schema based on number of zones."""
+    schema_dict = {
         vol.Required("pump_switch"): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="switch")
         ),
         vol.Required("main_line_switch"): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="switch")
         ),
-        vol.Optional("zone_1_switch"): selector.EntitySelector(
+    }
+    
+    # Add zone switches based on configured number
+    for i in range(1, num_zones + 1):
+        schema_dict[vol.Optional(f"zone_{i}_switch")] = selector.EntitySelector(
             selector.EntitySelectorConfig(domain="switch")
-        ),
-        vol.Optional("zone_2_switch"): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="switch")
-        ),
-        vol.Optional("zone_3_switch"): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="switch")
+        )
+        
+    return vol.Schema(schema_dict)
+
+
+STEP_ZONE_COUNT_SCHEMA = vol.Schema(
+    {
+        vol.Required(
+            CONF_NUM_ZONES,
+            default=DEFAULT_NUM_ZONES
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=MIN_ZONES,
+                max=MAX_ZONES,
+                mode="box",
+                step=1
+            )
         ),
     }
 )
@@ -60,6 +84,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the config flow."""
         self._data = {}
+        self._zone_parser = None
+        self._num_zones = DEFAULT_NUM_ZONES
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -71,15 +97,48 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._data.update(user_input)
             
             if user_input["installation_mode"] == "auto":
-                # Install files and create entry
-                await self._install_integration_files()
-                return self.async_create_entry(
-                    title=user_input[CONF_NAME],
-                    data={"installation_mode": "auto", "name": user_input[CONF_NAME]},
-                )
+                # Try to load from crop_steering.env
+                self._zone_parser = ZoneConfigParser(self.hass.config.config_dir)
+                if self._zone_parser.load_configuration():
+                    # Validate entities exist
+                    valid, missing = self._zone_parser.validate_entities(self.hass)
+                    if not valid:
+                        errors["base"] = "missing_entities"
+                        errors["missing_entities"] = missing
+                        return self.async_show_form(
+                            step_id="user",
+                            data_schema=STEP_USER_DATA_SCHEMA,
+                            errors=errors,
+                            description_placeholders={"missing": "\n".join(missing[:5])}
+                        )
+                    
+                    # Create entry with zone configuration
+                    zone_configs = self._zone_parser.zones
+                    hardware_config = self._zone_parser.hardware_config
+                    
+                    data = {
+                        "installation_mode": "auto",
+                        "name": user_input[CONF_NAME],
+                        CONF_NUM_ZONES: len(zone_configs),
+                        "zones": zone_configs,
+                        "hardware": hardware_config,
+                    }
+                    
+                    await self._install_integration_files()
+                    return self.async_create_entry(
+                        title=user_input[CONF_NAME],
+                        data=data,
+                    )
+                else:
+                    errors["base"] = "env_file_not_found"
+                    return self.async_show_form(
+                        step_id="user",
+                        data_schema=STEP_USER_DATA_SCHEMA,
+                        errors=errors,
+                    )
             else:
-                # Go to manual configuration
-                return await self.async_step_manual()
+                # Go to manual configuration - first ask for number of zones
+                return await self.async_step_zone_count()
 
         return self.async_show_form(
             step_id="user",
@@ -87,10 +146,24 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_zone_count(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle zone count selection."""
+        if user_input is not None:
+            self._num_zones = int(user_input[CONF_NUM_ZONES])
+            self._data[CONF_NUM_ZONES] = self._num_zones
+            return await self.async_step_manual()
+
+        return self.async_show_form(
+            step_id="zone_count",
+            data_schema=STEP_ZONE_COUNT_SCHEMA,
+        )
+        
     async def async_step_manual(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle manual configuration."""
+        """Handle manual zone configuration."""
         errors: dict[str, str] = {}
         
         if user_input is not None:
@@ -100,18 +173,46 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors[key] = "entity_not_found"
             
             if not errors:
+                # Build zone configuration from user input
+                zones = {}
+                hardware = {
+                    "pump_switch": user_input["pump_switch"],
+                    "main_line_switch": user_input["main_line_switch"],
+                }
+                
+                for i in range(1, self._num_zones + 1):
+                    zone_switch = user_input.get(f"zone_{i}_switch")
+                    if zone_switch:
+                        zones[i] = {
+                            "zone_number": i,
+                            "zone_switch": zone_switch,
+                            # Manual config doesn't include sensors
+                            "vwc_front": "",
+                            "vwc_back": "",
+                            "ec_front": "",
+                            "ec_back": "",
+                        }
+                
                 # Install files and create entry
                 await self._install_integration_files()
                 
-                self._data.update(user_input)
+                self._data.update({
+                    "installation_mode": "manual",
+                    "zones": zones,
+                    "hardware": hardware,
+                })
+                
                 return self.async_create_entry(
                     title=self._data.get(CONF_NAME, "Crop Steering System"),
                     data=self._data,
                 )
 
+        # Generate schema for configured number of zones
+        zone_schema = get_zone_schema(self._num_zones)
+        
         return self.async_show_form(
             step_id="manual",
-            data_schema=STEP_MANUAL_DATA_SCHEMA,
+            data_schema=zone_schema,
             errors=errors,
         )
 

@@ -1,18 +1,22 @@
 # Advanced AI Crop Steering System - Python Dependencies
-# Required packages for machine learning and sensor fusion features
+# Required packages for mathematical models and sensor fusion
+# Compatible with Home Assistant OS / AppDaemon containers
 
-# Core ML and Data Processing
-numpy>=1.21.0
-pandas>=1.3.0
-scikit-learn>=1.0.0
-scipy>=1.7.0
+# Core Data Processing and Mathematical Models
+numpy>=1.21.0          # Required for mathematical operations
+pandas>=1.3.0          # Required for data handling
+scipy>=1.7.0           # Required for statistical analysis and signal processing
 
-# Visualization and Dashboard
-plotly>=5.0.0
+# Visualization and Dashboard  
+plotly>=5.0.0          # Required for real-time dashboard graphs
 
-# Optional but recommended for enhanced features
-matplotlib>=3.5.0      # Additional plotting capabilities
-seaborn>=0.11.0        # Statistical data visualization
+# HTTP Requests (for API integration)
+requests>=2.25.0       # Required for external API calls
 
-# Note: These packages are required for the AI features to work properly.
-# Install with: pip install -r requirements.txt
+# Note: This system uses mathematical models instead of compiled ML libraries
+# for compatibility with Home Assistant OS containers.
+# 
+# scikit-learn is NOT required - we use scipy-based mathematical models
+# that don't require C++ compilation and work in restricted containers.
+#
+# Install in AppDaemon with: pip install numpy pandas scipy plotly requests

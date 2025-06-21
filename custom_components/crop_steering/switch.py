@@ -10,26 +10,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_NUM_ZONES
 
 _LOGGER = logging.getLogger(__name__)
 
-SWITCH_DESCRIPTIONS = [
-    SwitchEntityDescription(
-        key="zone_1_enabled",
-        name="Zone 1 Enabled",
-        icon="mdi:water-pump",
-    ),
-    SwitchEntityDescription(
-        key="zone_2_enabled",
-        name="Zone 2 Enabled", 
-        icon="mdi:water-pump",
-    ),
-    SwitchEntityDescription(
-        key="zone_3_enabled",
-        name="Zone 3 Enabled",
-        icon="mdi:water-pump",
-    ),
+# Base switch descriptions (non-zone specific)
+BASE_SWITCH_DESCRIPTIONS = [
     SwitchEntityDescription(
         key="ec_stacking_enabled",
         name="EC Stacking Enabled",
@@ -40,7 +26,42 @@ SWITCH_DESCRIPTIONS = [
         name="System Enabled",
         icon="mdi:power",
     ),
+    SwitchEntityDescription(
+        key="auto_irrigation_enabled",
+        name="Auto Irrigation Enabled",
+        icon="mdi:auto-mode",
+    ),
+    SwitchEntityDescription(
+        key="analytics_enabled",
+        name="Analytics Enabled",
+        icon="mdi:chart-line",
+    ),
 ]
+
+
+def create_zone_switch_descriptions(num_zones: int) -> list[SwitchEntityDescription]:
+    """Create switch descriptions for configured zones."""
+    zone_switches = []
+    
+    for zone_num in range(1, num_zones + 1):
+        zone_switches.append(
+            SwitchEntityDescription(
+                key=f"zone_{zone_num}_enabled",
+                name=f"Zone {zone_num} Enabled",
+                icon="mdi:water-pump",
+            )
+        )
+        
+        # Add per-zone manual override switch
+        zone_switches.append(
+            SwitchEntityDescription(
+                key=f"zone_{zone_num}_manual_override",
+                name=f"Zone {zone_num} Manual Override",
+                icon="mdi:hand-water",
+            )
+        )
+    
+    return zone_switches
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -50,7 +71,17 @@ async def async_setup_entry(
     """Set up Crop Steering switches."""
     switches = []
     
-    for description in SWITCH_DESCRIPTIONS:
+    # Get number of zones from config
+    config_data = hass.data[DOMAIN][entry.entry_id]
+    num_zones = config_data.get(CONF_NUM_ZONES, 1)
+    
+    # Add base switches
+    for description in BASE_SWITCH_DESCRIPTIONS:
+        switches.append(CropSteeringSwitch(entry, description))
+    
+    # Add zone-specific switches
+    zone_switches = create_zone_switch_descriptions(num_zones)
+    for description in zone_switches:
         switches.append(CropSteeringSwitch(entry, description))
     
     async_add_entities(switches)
@@ -68,7 +99,16 @@ class CropSteeringSwitch(SwitchEntity):
         self._entry = entry
         self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{description.key}"
         self._attr_name = f"Crop Steering {description.name}"
-        self._attr_is_on = False
+        
+        # Set default states based on switch type
+        if description.key == "system_enabled":
+            self._attr_is_on = True  # System enabled by default
+        elif description.key == "auto_irrigation_enabled":
+            self._attr_is_on = True  # Auto irrigation enabled by default
+        elif "zone_" in description.key and "_enabled" in description.key:
+            self._attr_is_on = True  # Zones enabled by default
+        else:
+            self._attr_is_on = False
 
     @property
     def device_info(self) -> DeviceInfo:

@@ -8,6 +8,13 @@ CONF_MAIN_LINE_SWITCH = "main_line_switch"
 CONF_ZONE_SWITCHES = "zone_switches"
 CONF_VWC_SENSORS = "vwc_sensors"
 CONF_EC_SENSORS = "ec_sensors"
+CONF_NUM_ZONES = "num_zones"
+CONF_ENV_FILE_PATH = "env_file_path"
+
+# Zone configuration
+MIN_ZONES = 1
+MAX_ZONES = 6
+DEFAULT_NUM_ZONES = 1
 
 # Default values (Athena method)
 DEFAULT_SCAN_INTERVAL = 30
@@ -35,3 +42,13 @@ CROP_TYPES = [
     "Basil",
     "Custom"
 ]
+
+# Entity prefixes
+ENTITY_PREFIX = "crop_steering"
+
+# Service names
+SERVICE_START_IRRIGATION = "start_irrigation"
+SERVICE_STOP_IRRIGATION = "stop_irrigation"
+SERVICE_SET_PHASE = "set_phase"
+SERVICE_TRIGGER_ZONE = "trigger_zone_irrigation"
+SERVICE_RECALIBRATE = "recalibrate_sensors"

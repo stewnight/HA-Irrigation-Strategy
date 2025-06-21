@@ -804,8 +804,9 @@ class MasterCropSteeringApp(hass.Hass):
             zone_scores = {}
             
             # Analyze VWC by zone
-            for i, zone in enumerate([1, 2, 3], 1):
-                zone_vwc_sensors = [s for s in self.config['sensors']['vwc'] if f'r{zone}' in s]
+            configured_zones = list(self.config['hardware']['zone_valves'].keys())
+            for zone in configured_zones:
+                zone_vwc_sensors = [s for s in self.config['sensors']['vwc'] if f'r{zone}' in s or f'z{zone}' in s]
                 
                 if zone_vwc_sensors:
                     zone_vwc_values = []

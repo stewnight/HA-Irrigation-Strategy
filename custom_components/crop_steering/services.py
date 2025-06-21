@@ -9,7 +9,7 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
+from .const import DOMAIN, MIN_ZONES, MAX_ZONES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,11 +20,24 @@ PHASE_TRANSITION_SCHEMA = vol.Schema({
     vol.Optional("forced"): cv.boolean,
 })
 
-IRRIGATION_SHOT_SCHEMA = vol.Schema({
-    vol.Required("zone"): vol.In([1, 2, 3]),
-    vol.Required("duration_seconds"): vol.Range(min=1, max=3600),
-    vol.Optional("shot_type"): vol.In(["P1", "P2", "P3_emergency"]),
-})
+def get_irrigation_shot_schema(hass: HomeAssistant) -> vol.Schema:
+    """Get irrigation shot schema with dynamic zone validation."""
+    # Get configured zones from the integration
+    zones = []
+    for entry_id in hass.data.get(DOMAIN, {}):
+        config_data = hass.data[DOMAIN].get(entry_id, {})
+        if "zones" in config_data:
+            zones.extend(config_data["zones"].keys())
+    
+    # If no zones configured, use default range
+    if not zones:
+        zones = list(range(1, MAX_ZONES + 1))
+    
+    return vol.Schema({
+        vol.Required("zone"): vol.In(zones),
+        vol.Required("duration_seconds"): vol.Range(min=1, max=3600),
+        vol.Optional("shot_type"): vol.In(["P1", "P2", "P3_emergency"]),
+    })
 
 SERVICES = {
     "transition_phase": {
@@ -32,8 +45,9 @@ SERVICES = {
         "method": "async_transition_phase",
     },
     "execute_irrigation_shot": {
-        "schema": IRRIGATION_SHOT_SCHEMA,
+        "schema": None,  # Will be set dynamically
         "method": "async_execute_irrigation_shot",
+        "dynamic_schema": True,
     },
     "check_transition_conditions": {
         "schema": vol.Schema({}),
@@ -161,11 +175,16 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
     # Register services
     for service_name, service_config in SERVICES.items():
+        # Handle dynamic schema
+        schema = service_config["schema"]
+        if service_config.get("dynamic_schema"):
+            schema = get_irrigation_shot_schema(hass)
+        
         hass.services.async_register(
             DOMAIN,
             service_name,
             locals()[service_config["method"]],
-            schema=service_config["schema"],
+            schema=schema,
         )
 
     _LOGGER.info("Crop steering services registered")

@@ -1,12 +1,13 @@
-# 🛠️ Complete Installation Guide
+# 🛠️ Complete Installation Guide (v2.1.0)
 
-This step-by-step guide will help you install the Advanced AI Crop Steering System, even if you're new to Home Assistant. We'll walk you through every step!
+This step-by-step guide will help you install the Advanced AI Crop Steering System with new dynamic zone support. Even if you're new to Home Assistant, we'll walk you through every step!
 
 ## 🎯 What You'll Install
 
-- **Crop Steering Integration**: Smart irrigation control for Home Assistant
+- **Crop Steering Integration**: Smart irrigation control with 1-6 dynamic zones
 - **AI Modules**: Machine learning for predictive irrigation
 - **Dashboard**: Real-time monitoring and analytics
+- **Zone Configuration Tools**: Easy setup for any number of zones
 - **AppDaemon**: Required for AI features
 
 ## 📋 Prerequisites
@@ -33,11 +34,11 @@ This step-by-step guide will help you install the Advanced AI Crop Steering Syst
 ### Hardware Requirements
 
 **Essential Hardware:**
-- **VWC Sensors**: 2+ per zone (minimum 6 total for 3 zones)
-- **EC Sensors**: 2+ per zone (minimum 6 total for 3 zones)
+- **VWC Sensors**: 1-2 per zone (flexible configuration)
+- **EC Sensors**: 1-2 per zone (flexible configuration)
 - **Irrigation Pump**: Relay-controlled with flow monitoring capability
 - **Main Line Valve**: Solenoid valve for main water line control
-- **Zone Valves**: Individual solenoid valves for each irrigation zone
+- **Zone Valves**: 1-6 individual solenoid valves (you choose how many)
 - **Reliable Network**: Stable WiFi/Ethernet for sensor communication
 
 **Recommended Hardware:**
@@ -68,7 +69,20 @@ This step-by-step guide will help you install the Advanced AI Crop Steering Syst
 
 ## 🚀 Step-by-Step Installation
 
-### Step 1: Install the Integration via HACS
+### Step 1: Fix AppDaemon Requirements (NEW - IMPORTANT!)
+
+**Before anything else, we need to fix a compatibility issue:**
+
+1. **Download the fix script** from your Home Assistant config directory
+2. **Run the fix:**
+   ```bash
+   ./fix_appdaemon_requirements.sh
+   ```
+3. **This prevents AppDaemon from trying to install scikit-learn** (which causes errors)
+
+> **Why?** The system uses scipy-based mathematical models instead of scikit-learn for better compatibility with Home Assistant OS containers.
+
+### Step 2: Install the Integration via HACS
 
 **1.1: Add Custom Repository**
 1. Open **HACS** in Home Assistant sidebar
@@ -146,94 +160,101 @@ This step-by-step guide will help you install the Advanced AI Crop Steering Syst
 5. Update `time_zone` to your location
 6. Click **SAVE**
 
-### Step 3: Install AI Modules
+### Step 3: Configure Your Zones (NEW - Easy Setup!)
 
-**3.1: Download AI Files**
-1. Open **File Editor**
-2. Create folder: Click **📁** → **New Folder** → Name it "temp"
-3. In temp folder, create file: **download.yaml**
-4. Paste this content:
-   ```yaml
-   # We'll download the AI files manually
-   # This is easier than using command line
-   ```
-5. **ALTERNATIVE**: Use Samba Share if installed:
-   - Open network location: `\\homeassistant.local\config`
-   - Create "temp" folder
-
-**3.2: Get the Files via Browser**
+**3.1: Download and Run Zone Configuration Helper**
 1. Go to: https://github.com/JakeTheRabbit/HA-Irrigation-Strategy
 2. Click **"Code"** → **"Download ZIP"**
 3. Extract the ZIP file on your computer
 4. Using **Samba Share** or **File Editor**:
-   - Copy `appdaemon/apps/apps.yaml` to `/config/appdaemon/apps/apps.yaml`
-   - Copy entire `appdaemon/apps/crop_steering/` folder to `/config/appdaemon/apps/crop_steering/`
+   - Copy `zone_configuration_helper.py` to `/config/zone_configuration_helper.py`
    - Copy `crop_steering.env` to `/config/crop_steering.env`
 
-**3.3: Restart AppDaemon**
+**3.2: Run Interactive Zone Setup**
+1. Open **Terminal** in Home Assistant (or SSH)
+2. Navigate to config directory:
+   ```bash
+   cd /config
+   ```
+3. Run the zone configuration helper:
+   ```bash
+   python3 zone_configuration_helper.py
+   ```
+4. **Follow the interactive prompts:**
+   - Choose number of zones (1-6)
+   - Enter entity IDs for zone switches
+   - Configure VWC and EC sensors for each zone
+   - The script validates everything and updates your config
+
+**3.3: Install AppDaemon AI Modules**
+1. Using **Samba Share** or **File Editor**:
+   - Copy `appdaemon/apps/apps.yaml` to `/config/appdaemon/apps/apps.yaml`
+   - Copy entire `appdaemon/apps/crop_steering/` folder to `/config/appdaemon/apps/crop_steering/`
+
+**3.4: Restart AppDaemon**
 1. Go to **Settings** → **Add-ons** → **AppDaemon 4**
 2. Click **RESTART**
 3. Check **Log** tab for "Master Crop Steering Application" startup message
 
-### Step 4: Configure Your Hardware
+### Step 4: Add the Integration (Easy!)
 
-**4.1: Find Your Entity Names**
-1. Go to **Settings** → **Devices & Services**
-2. Find your irrigation hardware (pumps, valves, sensors)
-3. Click on each device to see entity names
-4. Write down the entity IDs (like `switch.irrigation_pump`)
+**4.1: Add the Integration - Two Methods**
 
-**4.2: Configure crop_steering.env**
-1. Open **File Editor** from sidebar
-2. Open the file `/config/crop_steering.env`
-3. You'll see configuration like this:
-   ```bash
-   # Find your actual entity names and replace these examples:
-   PUMP_SWITCH=switch.f1_irrigation_pump_master_switch
-   MAIN_LINE_SWITCH=switch.espoe_irrigation_relay_1_2
-   ZONE_1_SWITCH=switch.f1_irrigation_relays_relay_1
-   ```
-4. **Replace with YOUR entity names:**
-   - Use **Developer Tools** → **States** to find exact names
-   - Replace `switch.f1_irrigation_pump_master_switch` with your pump switch
-   - Replace `switch.espoe_irrigation_relay_1_2` with your main valve
-   - Replace zone switches with your zone valves
-
-**4.3: Configure Sensors**
-In the same file, update sensor names:
-```bash
-# VWC Sensors - Replace with your sensor names
-VWC_SENSOR_ZONE_1_FRONT=sensor.vwc_r1_front
-VWC_SENSOR_ZONE_1_BACK=sensor.vwc_r1_back
-
-# EC Sensors - Replace with your sensor names  
-EC_SENSOR_ZONE_1_FRONT=sensor.ec_r1_front
-EC_SENSOR_ZONE_1_BACK=sensor.ec_r1_back
-```
-
-**4.4: Save and Test**
-1. Click **SAVE** in File Editor
-2. Go to **Developer Tools** → **Services**
-3. Test your pump: Call `switch.turn_on` with your pump entity
-4. **IMPORTANT:** Turn it back off after testing!
-
-## ⚙️ Integration Setup
-
-### Step 5: Add the Integration
-
+**Method A: Automatic Configuration (Recommended)**
 1. **Restart Home Assistant** (Settings → System → Restart)
 2. After restart, go to **Settings** → **Devices & Services**  
 3. Click **"+ ADD INTEGRATION"** (bottom right)
 4. Search for **"Crop Steering"**
 5. Click **"Crop Steering System"**
-6. Follow the setup wizard:
-   - **Crop Profile**: Choose your plant type (Cannabis_Athena for most users)
-   - **Growth Stage**: Select current stage (Vegetative/Flowering)
-   - **Active Zones**: Enable zones you want to use
+6. **Select "Load from crop_steering.env"**
+7. System automatically reads your zone configuration and creates all entities!
 
-### Step 6: Configure Integration Settings
+**Method B: Manual UI Configuration**
+1. Follow steps 1-5 above
+2. **Select "Manual Zone Configuration"**
+3. Choose number of zones (1-6)
+4. Enter switch entity IDs for each zone
+5. System creates basic entities (sensors configured separately)
 
-**6.1: Configure Sensors in Integration**
+**4.2: Verify Entities Created**
+After integration setup, check that entities were created:
+1. Go to **Settings** → **Devices & Services** → **Crop Steering System**
+2. You should see entities like:
+   - `switch.crop_steering_zone_1_enabled`
+   - `sensor.crop_steering_vwc_zone_1`
+   - `sensor.crop_steering_ec_zone_1`
+   - Plus many more for each zone!
+
+**4.3: Test Basic Operation**
+1. Go to **Developer Tools** → **Services**
+2. Test zone enable: Call `switch.turn_on` with `switch.crop_steering_zone_1_enabled`
+3. Check sensors are reading values in **Developer Tools** → **States**
+
+## ⚙️ Final Configuration
+
+### Step 5: Configure Crop Profile and Settings
+
+Now that your zones are set up, configure the system parameters:
+
+1. **Go to your integration settings:**
+   - **Settings** → **Devices & Services** → **Crop Steering System**
+   - Click **"CONFIGURE"**
+
+2. **Select your crop profile:**
+   - Cannabis_Athena (high EC methodology)
+   - Cannabis_Hybrid (balanced parameters)
+   - Cannabis_Indica/Sativa (strain-specific)
+   - Tomato, Lettuce, Custom
+
+3. **Adjust parameters if needed:**
+   - Substrate volume per zone
+   - Dripper flow rates
+   - EC and VWC targets
+   - Most defaults work well to start!
+
+### Step 6: Verify Everything is Working
+
+**6.1: Check the Dashboard**
 1. Go to **Settings** → **Devices & Services**
 2. Find **"Crop Steering System"** and click **CONFIGURE**
 3. Enter your sensor entity names:

@@ -96,8 +96,8 @@
 
 **👉 [Follow our Complete Installation Guide](docs/installation_guide.md)** - designed for beginners!
 
-> **✅ SYSTEM STATUS: PRODUCTION READY**  
-> This system has undergone comprehensive quality assurance testing and all critical issues have been resolved. The codebase is validated, optimized, and ready for deployment.
+> **✅ SYSTEM STATUS: PRODUCTION READY - v2.1.0**  
+> This system has undergone comprehensive quality assurance testing and all critical issues have been resolved. Now includes dynamic zone configuration and improved AppDaemon compatibility. The codebase is validated, optimized, and ready for deployment.
 
 ### 📋 What You Need
 
@@ -131,24 +131,59 @@
 
 ## ⚙️ Configuration
 
-**All configuration is done through the Home Assistant UI** - no manual file editing required!
+### 🎯 Two Easy Setup Methods (NEW in v2.1.0)
 
+#### **Method 1: Automatic Configuration (Recommended)**
+1. **Configure Your Zones:**
+   ```bash
+   python3 zone_configuration_helper.py
+   ```
+   This interactive tool helps you set up 1-6 irrigation zones with all sensors.
+
+2. **Add the Integration:**
+   - Settings → Devices & Services → Add Integration
+   - Search "Crop Steering" → Select "Load from crop_steering.env"
+   - System automatically creates all zone entities
+
+#### **Method 2: Manual UI Configuration**
 1. **Add the Integration:**
    - Settings → Devices & Services → Add Integration
-   - Search "Crop Steering" and follow the setup wizard
+   - Search "Crop Steering" → Select "Manual Zone Configuration"
+   - Choose number of zones (1-6) → Configure zone switches
 
-2. **Configure Your Hardware:**
-   - Edit `crop_steering.env` file with your sensor entity names
-   - Run validation: `python3 configure_crop_steering.py`
-   - Configure irrigation hardware (pump, valves) in the env file
-   - Select your crop profile through the integration UI
-
+### 🔧 AppDaemon Setup
+1. **Fix Requirements (Important!):**
+   ```bash
+   ./fix_appdaemon_requirements.sh
+   ```
+2. **Restart AppDaemon add-on**
 3. **AI Features Activate Automatically:**
    - Machine learning models start learning immediately
    - Sensor fusion begins with first readings
    - Dashboard becomes available
 
-### 🔧 New Configuration Tools
+### 🔧 New Configuration Tools (v2.1.0)
+
+**Zone Configuration Helper:** `zone_configuration_helper.py`
+- Interactive zone setup wizard
+- Supports 1-6 irrigation zones
+- Validates sensor and switch entities
+- Auto-updates crop_steering.env file
+
+```bash
+# Interactive zone configuration
+python3 zone_configuration_helper.py
+```
+
+**AppDaemon Fix Script:** `fix_appdaemon_requirements.sh`
+- Resolves scikit-learn installation issues
+- Installs scipy-based dependencies only
+- Ensures AppDaemon compatibility
+
+```bash
+# Fix AppDaemon requirements
+./fix_appdaemon_requirements.sh
+```
 
 **Configuration Validation Script:** `configure_crop_steering.py`
 - Validates all entity configurations
@@ -231,7 +266,7 @@ Once configured, the system runs automatically:
 - **24/7 Monitoring**: Continuous optimization without manual intervention
 
 ### **System Capabilities**
-- **Multi-Zone Support**: Up to 3 independent irrigation zones
+- **Dynamic Multi-Zone Support**: 1-6 independent irrigation zones with automatic configuration
 - **Real-Time Processing**: 30-second update cycles
 - **Predictive Horizon**: 2+ hours advance irrigation forecasting
 - **High Precision**: ±1% VWC targeting with sensor fusion
@@ -268,6 +303,7 @@ This system has undergone comprehensive testing and validation:
 - 📖 [Installation Guide](docs/installation_guide.md) - Complete step-by-step setup
 - 🧠 [AI Operation Guide](docs/ai_operation_guide.md) - How to use the intelligent features
 - 📊 [Dashboard Guide](docs/dashboard_guide.md) - Understanding the monitoring interface
+- 🎯 [Dynamic Zones Guide](docs/dynamic_zones_guide.md) - Configure 1-6 zones easily (NEW)
 - 🔧 [Troubleshooting Guide](docs/troubleshooting.md) - Fix common issues
 
 ## 🔧 Advanced Configuration
