@@ -356,16 +356,24 @@ class MasterCropSteeringApp(hass.Hass):
                 vwc_value = float(new)
                 timestamp = datetime.now()
                 
-                # Add to sensor fusion system
-                fusion_result = self.sensor_fusion.add_sensor_reading(
-                    entity, vwc_value, timestamp, 'vwc'
-                )
+                # TEMPORARILY BYPASS sensor fusion - it's mixing VWC and EC values
+                # Just use the direct sensor value
+                fusion_result = {
+                    'sensor_id': entity,
+                    'value': vwc_value,
+                    'is_outlier': False,
+                    'sensor_reliability': 0.9,
+                    'sensor_health': 'good',
+                    'fused_value': vwc_value,  # Use direct value
+                    'fusion_confidence': 0.9,
+                    'active_sensors': 1,
+                    'outlier_rate': 0.0
+                }
                 
-                # Add to dryback detector (use fused value if available)
-                if fusion_result['fused_value'] is not None:
-                    dryback_result = self.dryback_detector.add_vwc_reading(
-                        fusion_result['fused_value'], timestamp
-                    )
+                # Add to dryback detector (use direct value)
+                dryback_result = self.dryback_detector.add_vwc_reading(
+                    vwc_value, timestamp
+                )
                     
                     # Update HA entities with dryback data
                     self._update_dryback_entities(dryback_result)
@@ -401,18 +409,27 @@ class MasterCropSteeringApp(hass.Hass):
                 ec_value = float(new)
                 timestamp = datetime.now()
                 
-                # Add to sensor fusion system
-                fusion_result = self.sensor_fusion.add_sensor_reading(
-                    entity, ec_value, timestamp, 'ec'
-                )
+                # TEMPORARILY BYPASS sensor fusion - it's mixing VWC and EC values
+                # Just use the direct sensor value
+                fusion_result = {
+                    'sensor_id': entity,
+                    'value': ec_value,
+                    'is_outlier': False,
+                    'sensor_reliability': 0.9,
+                    'sensor_health': 'good',
+                    'fused_value': ec_value,  # Use direct value
+                    'fusion_confidence': 0.9,
+                    'active_sensors': 1,
+                    'outlier_rate': 0.0
+                }
                 
                 # Update fusion entities
                 self._update_sensor_fusion_entities(entity, fusion_result)
                 
-                # Check for critical EC levels
-                if fusion_result['fused_value'] and fusion_result['fused_value'] > self.config['thresholds']['critical_ec']:
-                    self.log(f"🚨 Critical EC level detected: {fusion_result['fused_value']:.2f} mS/cm", level='WARNING')
-                    await self._handle_critical_ec(fusion_result['fused_value'])
+                # Check for critical EC levels (using direct value)
+                if ec_value > self.config['thresholds']['critical_ec']:
+                    self.log(f"🚨 Critical EC level detected: {ec_value:.2f} mS/cm", level='WARNING')
+                    await self._handle_critical_ec(ec_value)
                 
                 # Log outliers
                 if fusion_result['is_outlier']:
