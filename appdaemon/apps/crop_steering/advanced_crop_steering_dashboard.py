@@ -19,7 +19,7 @@ import pandas as pd
 # Import our advanced modules
 from .advanced_dryback_detection import AdvancedDrybackDetector
 from .intelligent_sensor_fusion import IntelligentSensorFusion
-from .ml_irrigation_predictor import SimplifiedIrrigationPredictor
+from .ml_irrigation_predictor import SimplifiedIrrigationPredictor, MLIrrigationPredictor
 from .intelligent_crop_profiles import IntelligentCropProfiles
 
 _LOGGER = logging.getLogger(__name__)
