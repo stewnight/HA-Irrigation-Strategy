@@ -867,7 +867,7 @@ class MasterCropSteeringApp(hass.Hass):
             start_time = datetime.now()
             
             # Record pre-irrigation VWC
-            pre_vwc = await self._get_zone_average_vwc(zone)
+            pre_vwc = self._get_zone_average_vwc(zone)
             
             # Hardware sequence: Pump -> Main Line -> Zone Valve
             pump_entity = self.config['hardware']['pump_master']
@@ -903,7 +903,7 @@ class MasterCropSteeringApp(hass.Hass):
             
             # Record post-irrigation VWC (wait a bit for absorption)
             await asyncio.sleep(30)
-            post_vwc = await self._get_zone_average_vwc(zone)
+            post_vwc = self._get_zone_average_vwc(zone)
             
             # Calculate results
             irrigation_result = {
@@ -937,7 +937,7 @@ class MasterCropSteeringApp(hass.Hass):
             self.log(f"❌ Error during irrigation: {e}", level='ERROR')
             return {'status': 'error', 'error': str(e)}
 
-    async def _get_zone_average_vwc(self, zone: int) -> Optional[float]:
+    def _get_zone_average_vwc(self, zone: int) -> Optional[float]:
         """Get average VWC for specific zone."""
         try:
             zone_sensors = [s for s in self.config['sensors']['vwc'] if f'r{zone}' in s]
