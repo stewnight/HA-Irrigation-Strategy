@@ -65,7 +65,7 @@ class AdvancedCropSteeringDashboard(hass.Hass):
         self.ml_predictor = MLIrrigationPredictor(
             history_window=1000,
             prediction_horizon=120,
-            retrain_frequency=50
+            update_frequency=50
         )
         
         self.crop_profiles = IntelligentCropProfiles()
