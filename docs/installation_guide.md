@@ -166,31 +166,35 @@ This step-by-step guide will help you install the Advanced AI Crop Steering Syst
 5. **Update location settings** to your coordinates and timezone
 6. **Save the file**
 
-### Step 3: Configure Your Zones (NEW - Easy Setup!)
+### Step 3: Configure Your Zones (SIMPLIFIED!)
 
-**3.1: Download and Run Zone Configuration Helper**
+**3.1: Download Configuration File**
 1. Go to: https://github.com/JakeTheRabbit/HA-Irrigation-Strategy
 2. Click **"Code"** → **"Download ZIP"**
 3. Extract the ZIP file on your computer
 4. Using **Samba Share** or **File Editor**:
-   - Copy `zone_configuration_helper.py` to `/config/zone_configuration_helper.py`
    - Copy `crop_steering.env` to `/config/crop_steering.env`
 
-**3.2: Run Interactive Zone Setup**
-1. Open **Terminal** in Home Assistant (or SSH)
-2. Navigate to config directory:
+**3.2: Edit Configuration File**
+1. Open `/config/crop_steering.env` in **File Editor**
+2. **Update entity IDs for your hardware:**
    ```bash
-   cd /config
+   # IRRIGATION HARDWARE (REQUIRED)
+   PUMP_SWITCH=switch.your_pump_switch
+   MAIN_LINE_SWITCH=switch.your_main_valve
+   ZONE_1_SWITCH=switch.your_zone_1_valve
+   ZONE_2_SWITCH=switch.your_zone_2_valve
+   ZONE_3_SWITCH=switch.your_zone_3_valve
+   
+   # ZONE SENSORS (REQUIRED FOR AI)
+   ZONE_1_VWC_FRONT=sensor.your_zone_1_vwc_front
+   ZONE_1_VWC_BACK=sensor.your_zone_1_vwc_back
+   ZONE_1_EC_FRONT=sensor.your_zone_1_ec_front
+   ZONE_1_EC_BACK=sensor.your_zone_1_ec_back
+   # ... repeat for Zone 2 and Zone 3
    ```
-3. Run the zone configuration helper:
-   ```bash
-   python3 zone_configuration_helper.py
-   ```
-4. **Follow the interactive prompts:**
-   - Choose number of zones (1-6)
-   - Enter entity IDs for zone switches
-   - Configure VWC and EC sensors for each zone
-   - The script validates everything and updates your config
+3. **Find your entity IDs**: Go to **Developer Tools** → **States** in Home Assistant
+4. **Save the file** when complete
 
 **3.3: Install AppDaemon AI Modules (Updated Paths!)**
 
