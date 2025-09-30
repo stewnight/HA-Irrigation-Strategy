@@ -49,12 +49,12 @@ STEERING_MODES = ["Vegetative", "Generative"]
 CROP_TYPES = [
     "Cannabis_Athena",
     "Cannabis_Hybrid",
-    "Cannabis_Indica", 
+    "Cannabis_Indica",
     "Cannabis_Sativa",
     "Tomato",
     "Lettuce",
     "Basil",
-    "Custom"
+    "Custom",
 ]
 
 # Entity prefixes

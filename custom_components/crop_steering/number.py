@@ -1,4 +1,5 @@
 """Crop Steering System number entities."""
+
 from __future__ import annotations
 
 import logging
@@ -77,7 +78,7 @@ NUMBER_DESCRIPTIONS = [
     ),
     NumberEntityDescription(
         key="gen_dryback_target",
-        name="Generative Dryback Target", 
+        name="Generative Dryback Target",
         icon="mdi:water-minus",
         native_min_value=15.0,
         native_max_value=70.0,
@@ -379,6 +380,7 @@ NUMBER_DESCRIPTIONS = [
     ),
 ]
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -386,68 +388,75 @@ async def async_setup_entry(
 ) -> None:
     """Set up Crop Steering number entities."""
     numbers = []
-    
+
     # Add main number entities
     for description in NUMBER_DESCRIPTIONS:
         numbers.append(CropSteeringNumber(entry, description))
-    
+
     # Get number of zones from config
     config_data = hass.data[DOMAIN][entry.entry_id]
     num_zones = config_data.get(CONF_NUM_ZONES, 1)
-    
+
     # Add zone-specific number entities
     for zone_num in range(1, num_zones + 1):
         # Zone plant count
-        numbers.append(CropSteeringNumber(
-            entry,
-            NumberEntityDescription(
-                key=f"zone_{zone_num}_plant_count",
-                name=f"Zone {zone_num} Plant Count",
-                icon="mdi:sprout",
-                native_min_value=1,
-                native_max_value=50,
-                native_step=1,
-                mode="box",
-            ),
-            zone_num=zone_num,
-            default_value=4
-        ))
-        
+        numbers.append(
+            CropSteeringNumber(
+                entry,
+                NumberEntityDescription(
+                    key=f"zone_{zone_num}_plant_count",
+                    name=f"Zone {zone_num} Plant Count",
+                    icon="mdi:sprout",
+                    native_min_value=1,
+                    native_max_value=50,
+                    native_step=1,
+                    mode="box",
+                ),
+                zone_num=zone_num,
+                default_value=4,
+            )
+        )
+
         # Zone water limits
-        numbers.append(CropSteeringNumber(
-            entry,
-            NumberEntityDescription(
-                key=f"zone_{zone_num}_max_daily_volume",
-                name=f"Zone {zone_num} Max Daily Volume",
-                icon="mdi:water-check",
-                native_min_value=0,
-                native_max_value=200,
-                native_step=0.5,
-                native_unit_of_measurement=UnitOfVolume.LITERS,
-                mode="box",
-            ),
-            zone_num=zone_num,
-            default_value=20.0
-        ))
-        
+        numbers.append(
+            CropSteeringNumber(
+                entry,
+                NumberEntityDescription(
+                    key=f"zone_{zone_num}_max_daily_volume",
+                    name=f"Zone {zone_num} Max Daily Volume",
+                    icon="mdi:water-check",
+                    native_min_value=0,
+                    native_max_value=200,
+                    native_step=0.5,
+                    native_unit_of_measurement=UnitOfVolume.LITERS,
+                    mode="box",
+                ),
+                zone_num=zone_num,
+                default_value=20.0,
+            )
+        )
+
         # Zone-specific shot sizes
-        numbers.append(CropSteeringNumber(
-            entry,
-            NumberEntityDescription(
-                key=f"zone_{zone_num}_shot_size_multiplier",
-                name=f"Zone {zone_num} Shot Size Multiplier",
-                icon="mdi:multiplication",
-                native_min_value=0.1,
-                native_max_value=5.0,
-                native_step=0.1,
-                native_unit_of_measurement=PERCENTAGE,
-                mode="box",
-            ),
-            zone_num=zone_num,
-            default_value=1.0
-        ))
-    
+        numbers.append(
+            CropSteeringNumber(
+                entry,
+                NumberEntityDescription(
+                    key=f"zone_{zone_num}_shot_size_multiplier",
+                    name=f"Zone {zone_num} Shot Size Multiplier",
+                    icon="mdi:multiplication",
+                    native_min_value=0.1,
+                    native_max_value=5.0,
+                    native_step=0.1,
+                    native_unit_of_measurement=PERCENTAGE,
+                    mode="box",
+                ),
+                zone_num=zone_num,
+                default_value=1.0,
+            )
+        )
+
     async_add_entities(numbers)
+
 
 class CropSteeringNumber(NumberEntity, RestoreEntity):
     """Crop Steering number entity with state restoration."""
@@ -467,7 +476,7 @@ class CropSteeringNumber(NumberEntity, RestoreEntity):
         self._attr_name = description.name
         # Set object_id to include crop_steering prefix for entity_id generation
         self._attr_object_id = f"{DOMAIN}_{description.key}"
-        
+
         # Set default values based on Athena methodology
         default_values = {
             "substrate_volume": 10.0,
@@ -513,12 +522,14 @@ class CropSteeringNumber(NumberEntity, RestoreEntity):
             "lights_on_hour": 12,  # Default noon
             "lights_off_hour": 0,  # Default midnight
         }
-        
+
         # Use provided default or lookup from dict
         if default_value is not None:
             self._attr_native_value = default_value
         else:
-            self._attr_native_value = default_values.get(description.key, description.native_min_value)
+            self._attr_native_value = default_values.get(
+                description.key, description.native_min_value
+            )
 
     async def async_added_to_hass(self) -> None:
         """Restore state when added to hass."""

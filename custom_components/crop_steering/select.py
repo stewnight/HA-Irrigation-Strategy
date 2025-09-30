@@ -1,4 +1,5 @@
 """Crop Steering System select entities."""
+
 from __future__ import annotations
 
 import logging
@@ -15,32 +16,21 @@ from .const import DOMAIN, CONF_NUM_ZONES, SOFTWARE_VERSION
 _LOGGER = logging.getLogger(__name__)
 
 # Zone grouping options
-ZONE_GROUP_OPTIONS = [
-    "Ungrouped",
-    "Group A", 
-    "Group B",
-    "Group C",
-    "Group D"
-]
+ZONE_GROUP_OPTIONS = ["Ungrouped", "Group A", "Group B", "Group C", "Group D"]
 
 # Zone priority levels
-ZONE_PRIORITY_OPTIONS = [
-    "Critical",
-    "High",
-    "Normal", 
-    "Low"
-]
+ZONE_PRIORITY_OPTIONS = ["Critical", "High", "Normal", "Low"]
 
 # Zone-specific crop profiles
 ZONE_CROP_PROFILES = [
     "Follow Main",
     "Cannabis_Athena",
     "Cannabis_Indica_Dominant",
-    "Cannabis_Sativa_Dominant", 
+    "Cannabis_Sativa_Dominant",
     "Cannabis_Balanced_Hybrid",
     "Tomato_Hydroponic",
     "Lettuce_Leafy_Greens",
-    "Custom"
+    "Custom",
 ]
 
 # Note: Light schedules are now system-wide, not per-zone
@@ -52,13 +42,13 @@ SELECT_DESCRIPTIONS = [
         icon="mdi:sprout",
         options=[
             "Cannabis_Athena",
-            "Cannabis_Hybrid", 
+            "Cannabis_Hybrid",
             "Cannabis_Indica",
             "Cannabis_Sativa",
             "Tomato",
             "Lettuce",
             "Basil",
-            "Custom"
+            "Custom",
         ],
     ),
     SelectEntityDescription(
@@ -81,6 +71,7 @@ SELECT_DESCRIPTIONS = [
     ),
 ]
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -88,54 +79,61 @@ async def async_setup_entry(
 ) -> None:
     """Set up Crop Steering select entities."""
     selects = []
-    
+
     # Add main select entities
     for description in SELECT_DESCRIPTIONS:
         selects.append(CropSteeringSelect(entry, description))
-    
+
     # Get number of zones from config
     config_data = hass.data[DOMAIN][entry.entry_id]
     num_zones = config_data.get(CONF_NUM_ZONES, 1)
-    
+
     # Add zone-specific select entities
     for zone_num in range(1, num_zones + 1):
         # Zone Group
-        selects.append(CropSteeringSelect(
-            entry,
-            SelectEntityDescription(
-                key=f"zone_{zone_num}_group",
-                name=f"Zone {zone_num} Group",
-                options=ZONE_GROUP_OPTIONS,
-                icon="mdi:group",
-            ),
-            zone_num=zone_num
-        ))
-        
+        selects.append(
+            CropSteeringSelect(
+                entry,
+                SelectEntityDescription(
+                    key=f"zone_{zone_num}_group",
+                    name=f"Zone {zone_num} Group",
+                    options=ZONE_GROUP_OPTIONS,
+                    icon="mdi:group",
+                ),
+                zone_num=zone_num,
+            )
+        )
+
         # Zone Priority
-        selects.append(CropSteeringSelect(
-            entry,
-            SelectEntityDescription(
-                key=f"zone_{zone_num}_priority",
-                name=f"Zone {zone_num} Priority",
-                options=ZONE_PRIORITY_OPTIONS,
-                icon="mdi:priority-high",
-            ),
-            zone_num=zone_num
-        ))
-        
+        selects.append(
+            CropSteeringSelect(
+                entry,
+                SelectEntityDescription(
+                    key=f"zone_{zone_num}_priority",
+                    name=f"Zone {zone_num} Priority",
+                    options=ZONE_PRIORITY_OPTIONS,
+                    icon="mdi:priority-high",
+                ),
+                zone_num=zone_num,
+            )
+        )
+
         # Zone Crop Profile
-        selects.append(CropSteeringSelect(
-            entry,
-            SelectEntityDescription(
-                key=f"zone_{zone_num}_crop_profile",
-                name=f"Zone {zone_num} Crop Profile",
-                options=ZONE_CROP_PROFILES,
-                icon="mdi:sprout",
-            ),
-            zone_num=zone_num
-        ))
-    
+        selects.append(
+            CropSteeringSelect(
+                entry,
+                SelectEntityDescription(
+                    key=f"zone_{zone_num}_crop_profile",
+                    name=f"Zone {zone_num} Crop Profile",
+                    options=ZONE_CROP_PROFILES,
+                    icon="mdi:sprout",
+                ),
+                zone_num=zone_num,
+            )
+        )
+
     async_add_entities(selects)
+
 
 class CropSteeringSelect(SelectEntity, RestoreEntity):
     """Crop Steering select entity with state restoration."""
@@ -155,7 +153,7 @@ class CropSteeringSelect(SelectEntity, RestoreEntity):
         # Set object_id to include crop_steering prefix for entity_id generation
         self._attr_object_id = f"{DOMAIN}_{description.key}"
         self._attr_options = description.options
-        
+
         # Set default values based on entity type
         if "group" in description.key:
             self._attr_current_option = "Ungrouped"
@@ -168,7 +166,9 @@ class CropSteeringSelect(SelectEntity, RestoreEntity):
         elif description.key == "growth_stage":
             self._attr_current_option = "Vegetative"
         else:
-            self._attr_current_option = description.options[0] if description.options else None
+            self._attr_current_option = (
+                description.options[0] if description.options else None
+            )
 
     async def async_added_to_hass(self) -> None:
         """Restore state when added to hass."""
@@ -196,7 +196,7 @@ class CropSteeringSelect(SelectEntity, RestoreEntity):
                 identifiers={(DOMAIN, self._entry.entry_id)},
                 name="Crop Steering System",
                 manufacturer="Home Assistant Community",
-                model="Professional Irrigation Controller", 
+                model="Professional Irrigation Controller",
                 sw_version=SOFTWARE_VERSION,
             )
 

@@ -1,4 +1,5 @@
 """Crop Steering System sensors."""
+
 from __future__ import annotations
 
 import logging
@@ -21,9 +22,16 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
 
 from .const import (
-    DOMAIN, CONF_NUM_ZONES, SECONDS_PER_HOUR, PERCENTAGE_TO_RATIO,
-    DEFAULT_EC_RATIO, DEFAULT_EC_FALLBACK, VWC_ADJUSTMENT_PERCENT,
-    VWC_DRY_THRESHOLD, VWC_SATURATED_THRESHOLD, SOFTWARE_VERSION
+    DOMAIN,
+    CONF_NUM_ZONES,
+    SECONDS_PER_HOUR,
+    PERCENTAGE_TO_RATIO,
+    DEFAULT_EC_RATIO,
+    DEFAULT_EC_FALLBACK,
+    VWC_ADJUSTMENT_PERCENT,
+    VWC_DRY_THRESHOLD,
+    VWC_SATURATED_THRESHOLD,
+    SOFTWARE_VERSION,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,9 +39,11 @@ _LOGGER = logging.getLogger(__name__)
 
 class ShotCalculator:
     """Helper class for irrigation shot calculations."""
-    
+
     @staticmethod
-    def calculate_shot_duration(dripper_flow: float, substrate_vol: float, shot_size: float) -> float:
+    def calculate_shot_duration(
+        dripper_flow: float, substrate_vol: float, shot_size: float
+    ) -> float:
         """Calculate irrigation shot duration in seconds."""
         try:
             if dripper_flow > 0:
@@ -132,10 +142,11 @@ BASE_SENSOR_DESCRIPTIONS = [
     ),
 ]
 
+
 def create_zone_sensor_descriptions(num_zones: int) -> list[SensorEntityDescription]:
     """Create sensor descriptions for configured zones."""
     zone_sensors = []
-    
+
     for zone_num in range(1, num_zones + 1):
         # VWC sensor for each zone
         zone_sensors.append(
@@ -148,7 +159,7 @@ def create_zone_sensor_descriptions(num_zones: int) -> list[SensorEntityDescript
                 icon="mdi:water-percent",
             )
         )
-        
+
         # EC sensor for each zone
         zone_sensors.append(
             SensorEntityDescription(
@@ -159,7 +170,7 @@ def create_zone_sensor_descriptions(num_zones: int) -> list[SensorEntityDescript
                 icon="mdi:lightning-bolt",
             )
         )
-        
+
         # Zone status sensor
         zone_sensors.append(
             SensorEntityDescription(
@@ -168,7 +179,7 @@ def create_zone_sensor_descriptions(num_zones: int) -> list[SensorEntityDescript
                 icon="mdi:information",
             )
         )
-        
+
         # Zone last irrigation time
         zone_sensors.append(
             SensorEntityDescription(
@@ -178,7 +189,7 @@ def create_zone_sensor_descriptions(num_zones: int) -> list[SensorEntityDescript
                 icon="mdi:history",
             )
         )
-        
+
         # Zone water usage tracking
         zone_sensors.append(
             SensorEntityDescription(
@@ -190,7 +201,7 @@ def create_zone_sensor_descriptions(num_zones: int) -> list[SensorEntityDescript
                 icon="mdi:water",
             )
         )
-        
+
         zone_sensors.append(
             SensorEntityDescription(
                 key=f"zone_{zone_num}_weekly_water_usage",
@@ -201,7 +212,7 @@ def create_zone_sensor_descriptions(num_zones: int) -> list[SensorEntityDescript
                 icon="mdi:water-outline",
             )
         )
-        
+
         zone_sensors.append(
             SensorEntityDescription(
                 key=f"zone_{zone_num}_irrigation_count_today",
@@ -210,7 +221,7 @@ def create_zone_sensor_descriptions(num_zones: int) -> list[SensorEntityDescript
                 icon="mdi:counter",
             )
         )
-    
+
     return zone_sensors
 
 
@@ -221,25 +232,28 @@ async def async_setup_entry(
 ) -> None:
     """Set up Crop Steering sensors."""
     sensors = []
-    
+
     # Get number of zones from config
     config_data = hass.data[DOMAIN][entry.entry_id]
     num_zones = config_data.get(CONF_NUM_ZONES, 1)
     zones_config = config_data.get("zones", {})
     hardware_config = config_data.get("hardware", {})
-    
+
     # Use base sensors - no duplication needed
     sensor_descriptions = BASE_SENSOR_DESCRIPTIONS.copy()
-    
+
     # Add zone-specific sensors
     zone_sensors = create_zone_sensor_descriptions(num_zones)
     sensor_descriptions.extend(zone_sensors)
-    
+
     # Create sensor entities
     for description in sensor_descriptions:
-        sensors.append(CropSteeringSensor(entry, description, zones_config, hardware_config))
-    
+        sensors.append(
+            CropSteeringSensor(entry, description, zones_config, hardware_config)
+        )
+
     async_add_entities(sensors)
+
 
 class CropSteeringSensor(SensorEntity):
     """Crop Steering sensor."""
@@ -260,7 +274,7 @@ class CropSteeringSensor(SensorEntity):
         self._attr_name = description.name
         # Set object_id to include crop_steering prefix for entity_id generation
         self._attr_object_id = f"{DOMAIN}_{description.key}"
-        
+
         # Extract zone number from key if this is a zone sensor
         self._zone_number = None
         if "_zone_" in description.key:
@@ -293,15 +307,27 @@ class CropSteeringSensor(SensorEntity):
                 return self._get_zone_ec(self._zone_number)
             elif f"zone_{self._zone_number}_status" == self.entity_description.key:
                 return self._get_zone_status(self._zone_number)
-            elif f"zone_{self._zone_number}_last_irrigation" == self.entity_description.key:
+            elif (
+                f"zone_{self._zone_number}_last_irrigation"
+                == self.entity_description.key
+            ):
                 return self._get_zone_last_irrigation(self._zone_number)
-            elif f"zone_{self._zone_number}_daily_water_usage" == self.entity_description.key:
+            elif (
+                f"zone_{self._zone_number}_daily_water_usage"
+                == self.entity_description.key
+            ):
                 return self._get_zone_daily_water_usage(self._zone_number)
-            elif f"zone_{self._zone_number}_weekly_water_usage" == self.entity_description.key:
+            elif (
+                f"zone_{self._zone_number}_weekly_water_usage"
+                == self.entity_description.key
+            ):
                 return self._get_zone_weekly_water_usage(self._zone_number)
-            elif f"zone_{self._zone_number}_irrigation_count_today" == self.entity_description.key:
+            elif (
+                f"zone_{self._zone_number}_irrigation_count_today"
+                == self.entity_description.key
+            ):
                 return self._get_zone_irrigation_count_today(self._zone_number)
-        
+
         # Implement critical calculations ported from template entities
         if self.entity_description.key == "p1_shot_duration_seconds":
             return self._calculate_p1_shot_duration()
@@ -324,41 +350,47 @@ class CropSteeringSensor(SensorEntity):
         else:
             # Other sensors return None (placeholder)
             return None
-    
+
     def _calculate_p1_shot_duration(self) -> float:
         """Calculate P1 shot duration in seconds."""
         dripper_flow = self._get_number_value("dripper_flow_rate")
-        substrate_vol = self._get_number_value("substrate_volume") 
+        substrate_vol = self._get_number_value("substrate_volume")
         shot_size = self._get_number_value("p1_initial_shot_size")  # Simplified for now
-        return ShotCalculator.calculate_shot_duration(dripper_flow, substrate_vol, shot_size)
-    
+        return ShotCalculator.calculate_shot_duration(
+            dripper_flow, substrate_vol, shot_size
+        )
+
     def _calculate_p2_shot_duration(self) -> float:
         """Calculate P2 shot duration in seconds."""
         dripper_flow = self._get_number_value("dripper_flow_rate")
         substrate_vol = self._get_number_value("substrate_volume")
         shot_size = self._get_number_value("p2_shot_size")
-        return ShotCalculator.calculate_shot_duration(dripper_flow, substrate_vol, shot_size)
-    
+        return ShotCalculator.calculate_shot_duration(
+            dripper_flow, substrate_vol, shot_size
+        )
+
     def _calculate_p3_shot_duration(self) -> float:
         """Calculate P3 emergency shot duration in seconds."""
         dripper_flow = self._get_number_value("dripper_flow_rate")
         substrate_vol = self._get_number_value("substrate_volume")
         shot_size = self._get_number_value("p3_emergency_shot_size")
-        return ShotCalculator.calculate_shot_duration(dripper_flow, substrate_vol, shot_size)
-    
+        return ShotCalculator.calculate_shot_duration(
+            dripper_flow, substrate_vol, shot_size
+        )
+
     def _calculate_ec_ratio(self) -> float:
         """Calculate current EC ratio vs target."""
         try:
             current_ec = self._calculate_avg_ec()
             # Get current EC target based on phase and mode
             target_ec = self._get_current_ec_target()
-            
+
             if target_ec > 0 and current_ec is not None:
                 return round(current_ec / target_ec, 2)
             return DEFAULT_EC_RATIO
         except Exception:
             return DEFAULT_EC_RATIO
-    
+
     def _calculate_adjusted_p2_threshold(self) -> float:
         """Calculate P2 VWC threshold adjusted for EC ratio."""
         try:
@@ -366,55 +398,61 @@ class CropSteeringSensor(SensorEntity):
             ec_ratio = self._calculate_ec_ratio()
             ec_high_threshold = self._get_number_value("p2_ec_high_threshold")
             ec_low_threshold = self._get_number_value("p2_ec_low_threshold")
-            
+
             # Simplified adjustment logic
             if ec_ratio > ec_high_threshold:
-                return round(base_threshold + VWC_ADJUSTMENT_PERCENT, 2)  # Raise threshold when EC high
+                return round(
+                    base_threshold + VWC_ADJUSTMENT_PERCENT, 2
+                )  # Raise threshold when EC high
             elif ec_ratio < ec_low_threshold:
-                return round(base_threshold - VWC_ADJUSTMENT_PERCENT, 2)  # Lower threshold when EC low
+                return round(
+                    base_threshold - VWC_ADJUSTMENT_PERCENT, 2
+                )  # Lower threshold when EC low
             else:
                 return round(base_threshold, 2)
         except Exception:
             return self._get_number_value("p2_vwc_threshold")
-    
+
     def _get_zone_vwc(self, zone_num: int) -> float | None:
         """Get VWC value for specific zone from configured sensors."""
         zone_config = self._zones_config.get(zone_num, {})
         vwc_sensors = []
-        
-        if zone_config.get('vwc_front'):
-            vwc_sensors.append(zone_config['vwc_front'])
-        if zone_config.get('vwc_back'):
-            vwc_sensors.append(zone_config['vwc_back'])
-            
+
+        if zone_config.get("vwc_front"):
+            vwc_sensors.append(zone_config["vwc_front"])
+        if zone_config.get("vwc_back"):
+            vwc_sensors.append(zone_config["vwc_back"])
+
         return self._average_sensor_values(vwc_sensors)
-        
+
     def _get_zone_ec(self, zone_num: int) -> float | None:
         """Get EC value for specific zone from configured sensors."""
         zone_config = self._zones_config.get(zone_num, {})
         ec_sensors = []
-        
-        if zone_config.get('ec_front'):
-            ec_sensors.append(zone_config['ec_front'])
-        if zone_config.get('ec_back'):
-            ec_sensors.append(zone_config['ec_back'])
-            
+
+        if zone_config.get("ec_front"):
+            ec_sensors.append(zone_config["ec_front"])
+        if zone_config.get("ec_back"):
+            ec_sensors.append(zone_config["ec_back"])
+
         return self._average_sensor_values(ec_sensors)
-        
+
     def _get_zone_status(self, zone_num: int) -> str:
         """Get status for specific zone."""
         # Check if zone is enabled
-        zone_enabled = self.hass.states.get(f"switch.crop_steering_zone_{zone_num}_enabled")
+        zone_enabled = self.hass.states.get(
+            f"switch.crop_steering_zone_{zone_num}_enabled"
+        )
         if not zone_enabled or zone_enabled.state != "on":
             return "Disabled"
-            
+
         # Check VWC and EC values
         vwc = self._get_zone_vwc(zone_num)
         ec = self._get_zone_ec(zone_num)
-        
+
         if vwc is None or ec is None:
             return "Sensor Error"
-            
+
         # Basic status based on VWC
         if vwc < VWC_DRY_THRESHOLD:
             return "Dry - Needs Water"
@@ -422,109 +460,120 @@ class CropSteeringSensor(SensorEntity):
             return "Saturated"
         else:
             return "Optimal"
-            
+
     def _get_zone_last_irrigation(self, zone_num: int) -> str | None:
         """Get last irrigation time for zone."""
         # Check AppDaemon sensor for zone last irrigation
-        last_irrigation_sensor = self.hass.states.get(f"sensor.crop_steering_zone_{zone_num}_last_irrigation_app")
-        if last_irrigation_sensor and last_irrigation_sensor.state not in ['unknown', 'unavailable']:
+        last_irrigation_sensor = self.hass.states.get(
+            f"sensor.crop_steering_zone_{zone_num}_last_irrigation_app"
+        )
+        if last_irrigation_sensor and last_irrigation_sensor.state not in [
+            "unknown",
+            "unavailable",
+        ]:
             return last_irrigation_sensor.state
         return None
-    
+
     def _get_zone_daily_water_usage(self, zone_num: int) -> float:
         """Get daily water usage for zone."""
         # Check AppDaemon sensor for daily usage
-        usage_sensor = self.hass.states.get(f"sensor.crop_steering_zone_{zone_num}_daily_water_app")
-        if usage_sensor and usage_sensor.state not in ['unknown', 'unavailable']:
+        usage_sensor = self.hass.states.get(
+            f"sensor.crop_steering_zone_{zone_num}_daily_water_app"
+        )
+        if usage_sensor and usage_sensor.state not in ["unknown", "unavailable"]:
             try:
                 return float(usage_sensor.state)
             except ValueError:
                 pass
         return 0.0
-    
+
     def _get_zone_weekly_water_usage(self, zone_num: int) -> float:
         """Get weekly water usage for zone."""
         # Check AppDaemon sensor for weekly usage
-        usage_sensor = self.hass.states.get(f"sensor.crop_steering_zone_{zone_num}_weekly_water_app")
-        if usage_sensor and usage_sensor.state not in ['unknown', 'unavailable']:
+        usage_sensor = self.hass.states.get(
+            f"sensor.crop_steering_zone_{zone_num}_weekly_water_app"
+        )
+        if usage_sensor and usage_sensor.state not in ["unknown", "unavailable"]:
             try:
                 return float(usage_sensor.state)
             except ValueError:
                 pass
         return 0.0
-    
+
     def _get_zone_irrigation_count_today(self, zone_num: int) -> int:
         """Get today's irrigation count for zone."""
         # Check AppDaemon sensor for count
-        count_sensor = self.hass.states.get(f"sensor.crop_steering_zone_{zone_num}_irrigation_count_app")
-        if count_sensor and count_sensor.state not in ['unknown', 'unavailable']:
+        count_sensor = self.hass.states.get(
+            f"sensor.crop_steering_zone_{zone_num}_irrigation_count_app"
+        )
+        if count_sensor and count_sensor.state not in ["unknown", "unavailable"]:
             try:
                 return int(count_sensor.state)
             except ValueError:
                 pass
         return 0
-    
+
     def _average_sensor_values(self, sensor_ids: list[str]) -> float | None:
         """Average values from multiple sensors."""
         values = []
         for sensor_id in sensor_ids:
             try:
                 state = self.hass.states.get(sensor_id)
-                if state and state.state not in ['unknown', 'unavailable']:
+                if state and state.state not in ["unknown", "unavailable"]:
                     values.append(float(state.state))
             except (ValueError, TypeError):
                 continue
-                
+
         if values:
             return round(sum(values) / len(values), 2)
         return None
-    
+
     def _calculate_avg_vwc(self) -> float | None:
         """Calculate average VWC from all configured zone sensors."""
         all_sensors = []
         for zone_config in self._zones_config.values():
-            if zone_config.get('vwc_front'):
-                all_sensors.append(zone_config['vwc_front'])
-            if zone_config.get('vwc_back'):
-                all_sensors.append(zone_config['vwc_back'])
-                
+            if zone_config.get("vwc_front"):
+                all_sensors.append(zone_config["vwc_front"])
+            if zone_config.get("vwc_back"):
+                all_sensors.append(zone_config["vwc_back"])
+
         return self._average_sensor_values(all_sensors)
-    
+
     def _calculate_avg_ec(self) -> float | None:
         """Calculate average EC from all configured zone sensors."""
         all_sensors = []
         for zone_config in self._zones_config.values():
-            if zone_config.get('ec_front'):
-                all_sensors.append(zone_config['ec_front'])
-            if zone_config.get('ec_back'):
-                all_sensors.append(zone_config['ec_back'])
-                
+            if zone_config.get("ec_front"):
+                all_sensors.append(zone_config["ec_front"])
+            if zone_config.get("ec_back"):
+                all_sensors.append(zone_config["ec_back"])
+
         return self._average_sensor_values(all_sensors)
-    
+
     def _get_number_value(self, key: str) -> float:
         """Get value from integration number entity."""
         try:
             entity_id = f"number.crop_steering_{key}"
             state = self.hass.states.get(entity_id)
-            if state and state.state not in ['unknown', 'unavailable']:
+            if state and state.state not in ["unknown", "unavailable"]:
                 return float(state.state)
             return 0.0
         except (ValueError, TypeError):
             return 0.0
-    
+
     def _get_current_ec_target(self) -> float:
         """Get current EC target based on phase and steering mode."""
         try:
             # Get current phase and mode
             phase_state = self.hass.states.get("select.crop_steering_irrigation_phase")
             mode_state = self.hass.states.get("select.crop_steering_steering_mode")
-            
+
             if not phase_state or not mode_state:
                 return DEFAULT_EC_FALLBACK  # Default fallback
-            
+
             phase = phase_state.state
             mode = mode_state.state.lower()
-            
+
             # Map to EC target entities
             if mode == "vegetative":
                 if phase == "P0":
@@ -544,7 +593,7 @@ class CropSteeringSensor(SensorEntity):
                     return self._get_number_value("ec_target_gen_p2")
                 elif phase == "P3":
                     return self._get_number_value("ec_target_gen_p3")
-            
+
             return DEFAULT_EC_FALLBACK  # Default fallback
         except Exception:
             return DEFAULT_EC_FALLBACK
@@ -553,15 +602,17 @@ class CropSteeringSensor(SensorEntity):
         """Get current irrigation phase from AppDaemon sensor."""
         try:
             # Check if there's a sensor from AppDaemon
-            phase_sensor = self.hass.states.get("sensor.crop_steering_app_current_phase")
-            if phase_sensor and phase_sensor.state not in ['unknown', 'unavailable']:
+            phase_sensor = self.hass.states.get(
+                "sensor.crop_steering_app_current_phase"
+            )
+            if phase_sensor and phase_sensor.state not in ["unknown", "unavailable"]:
                 return phase_sensor.state
-            
+
             # Fallback to integration select entity
             phase_select = self.hass.states.get("select.crop_steering_irrigation_phase")
-            if phase_select and phase_select.state not in ['unknown', 'unavailable']:
+            if phase_select and phase_select.state not in ["unknown", "unavailable"]:
                 return phase_select.state
-            
+
             return "P2"  # Default to maintenance phase
         except Exception:
             return "P2"
@@ -570,10 +621,12 @@ class CropSteeringSensor(SensorEntity):
         """Get next irrigation time from AppDaemon sensor."""
         try:
             # Check if there's a sensor from AppDaemon
-            time_sensor = self.hass.states.get("sensor.crop_steering_app_next_irrigation")
-            if time_sensor and time_sensor.state not in ['unknown', 'unavailable']:
+            time_sensor = self.hass.states.get(
+                "sensor.crop_steering_app_next_irrigation"
+            )
+            if time_sensor and time_sensor.state not in ["unknown", "unavailable"]:
                 return time_sensor.state
-            
+
             # If no specific time available, return None
             return None
         except Exception:
