@@ -54,6 +54,31 @@ MANUAL_OVERRIDE_SCHEMA = vol.Schema(
     }
 )
 
+# LLM Service Schemas
+LLM_API_KEY_TEST_SCHEMA = vol.Schema(
+    {
+        vol.Required("provider"): vol.In(["openai", "claude"]),
+        vol.Required("api_key"): cv.string,
+        vol.Optional("model"): cv.string,
+    }
+)
+
+LLM_COST_ESTIMATE_SCHEMA = vol.Schema(
+    {
+        vol.Required("provider"): vol.In(["openai", "claude"]),
+        vol.Required("model"): cv.string,
+        vol.Optional("calls_per_day"): vol.Range(min=1, max=1000),
+    }
+)
+
+LLM_CONFIG_GENERATE_SCHEMA = vol.Schema(
+    {
+        vol.Required("provider"): vol.In(["openai", "claude"]),
+        vol.Required("model"): cv.string,
+        vol.Optional("daily_budget"): vol.Range(min=0.1, max=100.0),
+    }
+)
+
 SERVICES = {
     "transition_phase": {
         "schema": PHASE_TRANSITION_SCHEMA,
@@ -71,6 +96,19 @@ SERVICES = {
     "set_manual_override": {
         "schema": MANUAL_OVERRIDE_SCHEMA,
         "method": "async_set_manual_override",
+    },
+    # LLM Services
+    "test_llm_api_key": {
+        "schema": LLM_API_KEY_TEST_SCHEMA,
+        "method": "async_test_llm_api_key",
+    },
+    "estimate_llm_costs": {
+        "schema": LLM_COST_ESTIMATE_SCHEMA,
+        "method": "async_estimate_llm_costs",
+    },
+    "generate_llm_config": {
+        "schema": LLM_CONFIG_GENERATE_SCHEMA,
+        "method": "async_generate_llm_config",
     },
 }
 
@@ -252,9 +290,145 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 },
             )
 
-        _LOGGER.info(
-            f"Manual override set for Zone {zone}: {'Enabled' if enable else 'Disabled'}"
-        )
+    # LLM Testing Services
+    async def async_test_llm_api_key(call: ServiceCall) -> None:
+        """Service to test LLM API key configuration."""
+        try:
+            from .llm.setup_helper import LLMSetupHelper
+            from .llm.client import LLMProvider
+            
+            provider_str = call.data["provider"]
+            api_key = call.data["api_key"]
+            model = call.data.get("model")
+            
+            # Validate provider
+            try:
+                provider = LLMProvider(provider_str)
+            except ValueError:
+                result = {
+                    "success": False,
+                    "message": f"Invalid provider: {provider_str}",
+                    "recommendations": ["Use 'openai' or 'claude' as provider"]
+                }
+                hass.bus.async_fire("crop_steering_llm_test_result", result)
+                return
+            
+            # Create setup helper and test
+            setup_helper = LLMSetupHelper(hass)
+            result = await setup_helper.validate_api_key(provider, api_key, model)
+            
+            # Fire event with results
+            event_data = {
+                "success": result.success,
+                "message": result.message,
+                "details": result.details,
+                "recommendations": result.recommendations,
+                "timestamp": dt_util.utcnow().isoformat(),
+            }
+            
+            hass.bus.async_fire("crop_steering_llm_test_result", event_data)
+            
+            if result.success:
+                _LOGGER.info("LLM API key test successful: %s", result.message)
+            else:
+                _LOGGER.warning("LLM API key test failed: %s", result.message)
+                
+        except Exception as e:
+            _LOGGER.error("LLM API key test error: %s", e)
+            hass.bus.async_fire("crop_steering_llm_test_result", {
+                "success": False,
+                "message": f"Test failed with error: {e}",
+                "recommendations": ["Check configuration and try again"],
+                "timestamp": dt_util.utcnow().isoformat(),
+            })
+
+    async def async_estimate_llm_costs(call: ServiceCall) -> None:
+        """Service to estimate LLM usage costs."""
+        try:
+            from .llm.setup_helper import LLMSetupHelper
+            from .llm.client import LLMProvider
+            
+            provider_str = call.data["provider"]
+            model = call.data["model"]
+            calls_per_day = call.data.get("calls_per_day", 100)
+            
+            # Validate provider
+            try:
+                provider = LLMProvider(provider_str)
+            except ValueError:
+                result = {
+                    "error": f"Invalid provider: {provider_str}",
+                    "recommendations": ["Use 'openai' or 'claude' as provider"]
+                }
+                hass.bus.async_fire("crop_steering_llm_cost_estimate", result)
+                return
+            
+            # Create setup helper and estimate
+            setup_helper = LLMSetupHelper(hass)
+            result = await setup_helper.estimate_costs(provider, model, calls_per_day)
+            
+            # Add timestamp
+            result["timestamp"] = dt_util.utcnow().isoformat()
+            
+            # Fire event with results
+            hass.bus.async_fire("crop_steering_llm_cost_estimate", result)
+            
+            _LOGGER.info("LLM cost estimate completed for %s/%s", provider_str, model)
+                
+        except Exception as e:
+            _LOGGER.error("LLM cost estimation error: %s", e)
+            hass.bus.async_fire("crop_steering_llm_cost_estimate", {
+                "error": f"Cost estimation failed: {e}",
+                "recommendations": ["Check model name and try again"],
+                "timestamp": dt_util.utcnow().isoformat(),
+            })
+
+    async def async_generate_llm_config(call: ServiceCall) -> None:
+        """Service to generate LLM configuration template."""
+        try:
+            from .llm.setup_helper import LLMSetupHelper
+            from .llm.client import LLMProvider
+            
+            provider_str = call.data["provider"]
+            model = call.data["model"]
+            daily_budget = call.data.get("daily_budget", 2.0)
+            
+            # Validate provider
+            try:
+                provider = LLMProvider(provider_str)
+            except ValueError:
+                result = {
+                    "error": f"Invalid provider: {provider_str}",
+                    "recommendations": ["Use 'openai' or 'claude' as provider"]
+                }
+                hass.bus.async_fire("crop_steering_llm_config_generated", result)
+                return
+            
+            # Create setup helper and generate config
+            setup_helper = LLMSetupHelper(hass)
+            config_template = setup_helper.generate_config_template(provider, model, daily_budget)
+            
+            # Fire event with results
+            result = {
+                "success": True,
+                "config_template": config_template,
+                "provider": provider_str,
+                "model": model,
+                "daily_budget": daily_budget,
+                "timestamp": dt_util.utcnow().isoformat(),
+            }
+            
+            hass.bus.async_fire("crop_steering_llm_config_generated", result)
+            
+            _LOGGER.info("LLM config template generated for %s/%s", provider_str, model)
+                
+        except Exception as e:
+            _LOGGER.error("LLM config generation error: %s", e)
+            hass.bus.async_fire("crop_steering_llm_config_generated", {
+                "error": f"Config generation failed: {e}",
+                "recommendations": ["Check parameters and try again"],
+                "timestamp": dt_util.utcnow().isoformat(),
+            })
 
     # Register services
     for service_name, service_config in SERVICES.items():

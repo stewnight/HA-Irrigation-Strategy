@@ -198,16 +198,14 @@ class OpenAIClient(LLMClient):
 
     BASE_URL = "https://api.openai.com/v1"
 
-    # Token pricing (per 1K tokens) - 2025 GPT-5 pricing
+    # Token pricing (per 1K tokens) - Updated December 2024
     PRICING = {
-        # GPT-5 Models (2025) - Primary models
-        "gpt-5": {"input": 0.00125, "output": 0.01},  # $1.25/$10.00 per 1M tokens
-        "gpt-5-mini": {"input": 0.00025, "output": 0.002},  # $0.25/$2.00 per 1M tokens
-        "gpt-5-nano": {"input": 0.00005, "output": 0.0004},  # $0.05/$0.40 per 1M tokens
-        # Legacy GPT-4 Models (deprecated - use GPT-5 instead)
-        "gpt-4": {"input": 0.03, "output": 0.06},
-        "gpt-4-turbo": {"input": 0.01, "output": 0.03},
-        "gpt-3.5-turbo": {"input": 0.001, "output": 0.002},
+        # Current OpenAI Models
+        "gpt-4o": {"input": 0.005, "output": 0.015},  # $5.00/$15.00 per 1M tokens - Best balance
+        "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},  # $0.15/$0.60 per 1M tokens - Most economical
+        "gpt-4-turbo": {"input": 0.01, "output": 0.03},  # $10.00/$30.00 per 1M tokens
+        "gpt-4": {"input": 0.03, "output": 0.06},  # $30.00/$60.00 per 1M tokens
+        "gpt-3.5-turbo": {"input": 0.001, "output": 0.002},  # $1.00/$2.00 per 1M tokens
     }
 
     async def complete(self, messages: List[Dict[str, str]], **kwargs) -> LLMResponse:

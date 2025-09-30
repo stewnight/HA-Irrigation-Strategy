@@ -408,7 +408,7 @@ class CostOptimizer:
             # Use cheaper models and lower token limits
             recommendations.update(
                 {
-                    "suggested_model": "gpt-5-nano",  # Ultra-cheap GPT-5 model
+                    "suggested_model": "gpt-4o-mini",  # Most economical current model
                     "max_tokens": 1000,  # Reduced token limit
                     "temperature": 0.3,  # Lower temperature for more deterministic output
                     "reason": "Economy tier - using cost-optimized settings",
@@ -432,7 +432,7 @@ class CostOptimizer:
             if daily_pct > 0.9:
                 recommendations.update(
                     {
-                        "suggested_model": "gpt-5-nano",
+                        "suggested_model": "gpt-4o-mini",
                         "max_tokens": 2000,
                         "reason": "Approaching daily budget - using cheaper model",
                     }
