@@ -1,0 +1,104 @@
+# Ready-to-Use LLM Configuration Examples
+# Copy the appropriate section to your /config/appdaemon/apps/apps.yaml
+
+# ====================
+# BEGINNER SETUP ($1-2/day)
+# ====================
+# Best for: Testing, learning, low-volume usage
+# Model: GPT-4o Mini (most cost-effective)
+
+llm_enhanced_crop_steering:
+  module: crop_steering.llm.llm_enhanced_app
+  class: LLMEnhancedCropSteering
+
+  # STEP 1: Change these to match your setup
+  zones: [1, 2, 3]        # YOUR zone numbers here
+  enable_llm: true
+
+  # STEP 2: Get API key from https://platform.openai.com/api-keys
+  # STEP 3: Add to secrets.yaml: openai_api_key: "sk-your-key-here"
+  llm_config:
+    provider: "openai"
+    model: "gpt-4o-mini"                    # $0.15/$0.60 per 1M tokens
+    api_key: !secret openai_api_key         # References secrets.yaml
+    timeout: 30
+    max_retries: 3
+
+  budget_config:
+    daily_limit: 1.5        # $1.50 per day max
+    cost_tier: "economy"    # Strict budget controls
+    enable_alerts: true     # Get notifications
+
+  llm_confidence_threshold: 70.0
+  enable_llm_phase_transitions: true
+
+  safety_thresholds:
+    min_confidence: 70.0
+    max_vwc_critical: 80.0
+    min_vwc_critical: 40.0
+    emergency_response_time: 300
+
+# Expected cost: $0.10-0.40/day with caching
+
+---
+
+# ====================
+# STANDARD SETUP ($2-5/day) 
+# ====================
+# Best for: Regular automation, balanced performance
+# Model: Claude Haiku (fast and capable)
+
+llm_enhanced_crop_steering_standard:
+  module: crop_steering.llm.llm_enhanced_app
+  class: LLMEnhancedCropSteering
+
+  zones: [1, 2, 3, 4]     # YOUR zone numbers here
+  enable_llm: true
+
+  # Get API key from https://console.anthropic.com/
+  # Add to secrets.yaml: claude_api_key: "sk-ant-your-key-here"
+  llm_config:
+    provider: "claude"
+    model: "claude-3-haiku-20240307"        # $0.25/$1.25 per 1M tokens
+    api_key: !secret claude_api_key
+    timeout: 30
+    max_retries: 3
+
+  budget_config:
+    daily_limit: 3.0        # $3.00 per day max
+    cost_tier: "standard"   # Balanced approach
+    enable_alerts: true
+
+  llm_confidence_threshold: 70.0
+  enable_llm_phase_transitions: true
+
+  safety_thresholds:
+    min_confidence: 70.0
+    max_vwc_critical: 80.0
+    min_vwc_critical: 40.0
+    emergency_response_time: 300
+
+# Expected cost: $0.20-0.80/day with caching
+
+---
+
+# TESTING YOUR SETUP:
+
+# 1. After adding config and restarting AppDaemon, test your API key:
+#    Developer Tools → Services → Call Service:
+#    service: crop_steering.test_llm_api_key
+#    data:
+#      provider: "openai"  # or "claude"
+#      api_key: "sk-your-key-here"
+
+# 2. Estimate costs before enabling:
+#    service: crop_steering.estimate_llm_costs
+#    data:
+#      provider: "openai"
+#      model: "gpt-4o-mini"
+#      calls_per_day: 100
+
+# 3. Monitor usage with these sensors:
+#    - sensor.crop_steering_llm_daily_cost
+#    - sensor.crop_steering_llm_decisions_today
+#    - sensor.crop_steering_llm_cache_hit_rate
