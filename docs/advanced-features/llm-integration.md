@@ -1,53 +1,156 @@
 # LLM Integration Guide
 
-**Optional AI integration for the crop steering system** with rule-based safety validation. This guide covers setup, configuration, and cost management for GPT-5 powered decision assistance.
+**🤖 Optional AI Assistant for Crop Steering** - Adds intelligent decision support while maintaining rule-based safety validation.
 
-> **Prerequisites**: Complete [full automation setup](../user-guides/02-installation.md#complete-setup) with working AppDaemon before adding LLM features.
+> **Prerequisites**: Complete [installation](../user-guides/02-installation.md) with working AppDaemon before adding LLM features.
 
-## How LLM Integration Actually Works
+---
 
-### The Reality vs The Hype
+## 🎯 What LLM Actually Does (Reality Check)
 
-**✅ What LLM Actually Does**:
-- Analyzes current sensor snapshot (VWC, EC, temperature, phase)
-- Provides intelligent recommendations: "Irrigate now" or "Wait longer"
-- Explains reasoning in natural language
-- Considers multiple factors simultaneously (growth stage, environmental conditions)
-- Suggests shot size and timing adjustments
+### ✅ **What It Really Provides**:
+- **Smart Analysis**: Considers multiple factors simultaneously (VWC, EC, growth stage, environmental conditions)
+- **Intelligent Recommendations**: "Irrigate now with 120ml" or "Wait 30 minutes, VWC is rising"
+- **Natural Language Reasoning**: "Plants are in flowering stage with high VPD, recommend smaller shots to avoid stress"
+- **Context Awareness**: Adjusts recommendations based on current growth phase and recent irrigation history
+- **Cost Optimization**: Built-in budget controls and caching to keep costs reasonable
 
-**❌ What LLM Does NOT Do**:
-- **No persistent memory**: Cannot remember previous decisions or outcomes
-- **No learning**: Each API call is completely independent
-- **No direct hardware control**: Only provides advisory recommendations
-- **No autonomous operation**: Rule-based logic validates and executes all decisions
+### ❌ **What It Does NOT Do**:
+- **No Memory**: Each decision is independent - it can't learn from past outcomes
+- **No Hardware Control**: Only provides recommendations; rule-based safety always validates and executes
+- **No Magic**: Can't predict plant problems or guarantee better yields
+- **No Autonomous Operation**: Human oversight and rule-based safety nets are always active
 
-### Safety-First Architecture
+---
 
-```mermaid
-flowchart TD
-    Sensor[Sensor Update] --> Rule[Rule-Based Decision<br/>Always Calculated]
-    Rule --> LLMCheck{LLM Enabled?<br/>Within Budget?}
-    
-    LLMCheck -->|No| UseRule[Execute Rule Decision]
-    LLMCheck -->|Yes| LLMCall[LLM Consultation<br/>Current Snapshot Only]
-    
-    LLMCall --> Confidence{Confidence > 80%?}
-    Confidence -->|No| UseRule
-    Confidence -->|Yes| Validate{Rule Logic<br/>Validates LLM?}
-    
-    Validate -->|No| UseRule
-    Validate -->|Yes| UseLLM[Execute LLM Decision]
-    
-    UseRule --> Safety[Safety Checks]
-    UseLLM --> Safety
-    Safety --> Execute[Execute Irrigation]
-    
-    style Rule fill:#e3f2fd
-    style LLMCall fill:#fff3e0
-    style Safety fill:#ffcdd2
+## 💰 Real Cost Examples (December 2024)
+
+### **Recommended Budget Models**:
+
+**🥇 Best Value: GPT-4o Mini**
+- Cost: $0.15 input / $0.60 output per 1M tokens
+- Typical usage: 100 decisions/day = $0.10-0.30/day
+- Best for: Most home users, learning, daily automation
+
+**🥈 Fast & Capable: Claude Haiku**  
+- Cost: $0.25 input / $1.25 output per 1M tokens
+- Typical usage: 100 decisions/day = $0.15-0.40/day
+- Best for: Users wanting faster responses
+
+**🥉 Premium Quality: GPT-4o**
+- Cost: $5.00 input / $15.00 output per 1M tokens  
+- Typical usage: 100 decisions/day = $2.00-5.00/day
+- Best for: Research, high-value crops, complex analysis
+
+### **With Smart Caching** (Recommended):
+- **Week 1**: Full costs while building cache
+- **Week 2+**: 70-90% cost reduction for routine decisions  
+- **Typical home usage**: $0.05-0.50/day after caching
+
+---
+
+## 🚀 Quick Setup (5 Minutes)
+
+### **Step 1: Get API Key**
+Choose one provider:
+- **OpenAI**: [Get API key](https://platform.openai.com/api-keys) ($5 free credit for new accounts)
+- **Claude**: [Get API key](https://console.anthropic.com/) (Free tier available)
+
+### **Step 2: Test Your API Key**
+Use the built-in testing service in Home Assistant:
+
+**Developer Tools → Services → Call Service:**
+```yaml
+service: crop_steering.test_llm_api_key
+data:
+  provider: "openai"  # or "claude"
+  api_key: "sk-your-key-here"
+  model: "gpt-4o-mini"  # optional
 ```
 
-## Cost Reality & Budget Planning
+✅ **Success**: You'll see a confirmation with cost estimate  
+❌ **Failure**: Check key format and account status
+
+### **Step 3: Add to Secrets**
+Edit `/config/secrets.yaml`:
+```yaml
+# Add your API key
+openai_api_key: "sk-your-actual-key-here"
+# OR
+claude_api_key: "sk-ant-your-actual-key-here"
+```
+
+### **Step 4: Generate Configuration**
+Use the built-in config generator:
+
+**Developer Tools → Services → Call Service:**
+```yaml
+service: crop_steering.generate_llm_config
+data:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  daily_budget: 2.0
+```
+
+This creates a ready-to-use configuration template.
+
+### **Step 5: Enable in AppDaemon**
+Copy the generated config to `/config/appdaemon/apps/apps.yaml` and restart AppDaemon.
+
+---
+
+## 📊 Monitoring & Budget Control
+
+### **Built-in Cost Tracking**
+The system automatically creates Home Assistant sensors:
+- `sensor.crop_steering_llm_daily_cost`
+- `sensor.crop_steering_llm_decisions_today`  
+- `sensor.crop_steering_llm_cache_hit_rate`
+- `sensor.crop_steering_llm_budget_remaining`
+
+### **Smart Budget Controls**
+```yaml
+budget_config:
+  daily_limit: 2.0        # Hard stop at $2/day
+  cost_tier: "standard"   # Automatic model selection
+  enable_alerts: true     # Notifications when approaching limits
+```
+
+### **Cost Optimization Features**
+- **Intelligent Caching**: 70-90% cost reduction for repeated scenarios
+- **Model Auto-Selection**: Uses cheaper models for routine decisions
+- **Budget Enforcement**: Automatically falls back to rules when budget exceeded
+- **Usage Analytics**: Track performance and identify cost optimization opportunities
+
+---
+
+## 🛠️ Advanced Configuration
+
+### **Model Selection Strategy**
+```yaml
+# Automatic model selection based on situation:
+cost_tier: "standard"
+
+# Manual model selection:
+llm_config:
+  model: "gpt-4o-mini"    # Fixed model
+```
+
+### **Decision Thresholds**
+```yaml
+llm_confidence_threshold: 70.0   # Only trust LLM if >70% confident
+enable_llm_phase_transitions: true  # Allow LLM to suggest phase changes
+```
+
+### **Safety Limits** (Critical - Don't Change Unless You Know What You're Doing)
+```yaml
+safety_thresholds:
+  max_vwc_critical: 80.0    # Emergency stop if VWC > 80%
+  min_vwc_critical: 40.0    # Emergency irrigation if VWC < 40%
+  emergency_response_time: 300  # 5 minutes max response time
+```
+
+---
 
 ### Cost Expectations
 

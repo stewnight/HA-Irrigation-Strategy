@@ -80,7 +80,7 @@ class LLMEnhancedCropSteering(hass.Hass):
         # LLM Configuration
         llm_config = self.args.get("llm_config", {})
         self._llm_provider = LLMProvider(llm_config.get("provider", "openai"))
-        self._llm_model = llm_config.get("model", "gpt-5-nano")
+        self._llm_model = llm_config.get("model", "gpt-4o-mini")
         self._llm_api_key = llm_config.get("api_key", "")
 
         # Budget Configuration

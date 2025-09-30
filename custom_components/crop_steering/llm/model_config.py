@@ -1,7 +1,7 @@
-"""GPT-5 Configuration and Integration for Crop Steering System.
+"""Modern LLM Configuration and Integration for Crop Steering System.
 
-Implements GPT-5 specific features including reasoning effort control,
-verbosity management, and optimized pricing for 2025 models.
+Implements current LLM features with cost optimization and intelligent 
+model selection for Claude and OpenAI models.
 """
 
 from __future__ import annotations
@@ -15,12 +15,17 @@ from typing import Dict, Optional, Any, Tuple
 _LOGGER = logging.getLogger(__name__)
 
 
-class GPT5Model(Enum):
-    """GPT-5 model variants with 2025 pricing."""
+class LLMModel(Enum):
+    """Current LLM model variants with 2024 pricing."""
 
-    NANO = "gpt-5-nano"  # $0.05/1M input, $0.40/1M output
-    MINI = "gpt-5-mini"  # $0.25/1M input, $2.00/1M output
-    STANDARD = "gpt-5"  # $1.25/1M input, $10.00/1M output
+    # OpenAI Models
+    GPT4O_MINI = "gpt-4o-mini"  # $0.15/1M input, $0.60/1M output - Best value
+    GPT4O = "gpt-4o"  # $5.00/1M input, $15.00/1M output - High quality
+    GPT4_TURBO = "gpt-4-turbo"  # $10.00/1M input, $30.00/1M output - Premium
+    
+    # Claude Models  
+    CLAUDE_HAIKU = "claude-3-haiku-20240307"  # $0.25/1M input, $1.25/1M output - Fastest
+    CLAUDE_SONNET = "claude-3-5-sonnet-20241022"  # $3.00/1M input, $15.00/1M output - Balanced
 
 
 class ReasoningEffort(Enum):
@@ -41,13 +46,13 @@ class Verbosity(Enum):
 
 
 @dataclass
-class GPT5Config:
-    """GPT-5 specific configuration."""
+class LLMConfig:
+    """Modern LLM configuration."""
 
-    # Model selection
-    default_model: GPT5Model = GPT5Model.NANO
-    enhanced_model: GPT5Model = GPT5Model.MINI
-    emergency_model: GPT5Model = GPT5Model.STANDARD
+    # Model selection - Use real models with good value
+    default_model: LLMModel = LLMModel.GPT4O_MINI  # Best cost/performance
+    enhanced_model: LLMModel = LLMModel.CLAUDE_HAIKU  # Fast and capable
+    emergency_model: LLMModel = LLMModel.GPT4O  # High quality when needed
 
     # Reasoning configuration
     default_reasoning: ReasoningEffort = ReasoningEffort.MINIMAL
@@ -78,20 +83,22 @@ class GPT5Config:
     tool_grammar: Optional[str] = None
 
 
-class GPT5CostCalculator:
-    """Calculate costs for GPT-5 models."""
+class LLMCostCalculator:
+    """Calculate costs for current LLM models."""
 
-    # 2025 Pricing (per million tokens)
+    # December 2024 Pricing (per million tokens)
     PRICING = {
-        GPT5Model.NANO: {"input": 0.05, "output": 0.40},
-        GPT5Model.MINI: {"input": 0.25, "output": 2.00},
-        GPT5Model.STANDARD: {"input": 1.25, "output": 10.00},
+        LLMModel.GPT4O_MINI: {"input": 0.15, "output": 0.60},
+        LLMModel.GPT4O: {"input": 5.00, "output": 15.00},
+        LLMModel.GPT4_TURBO: {"input": 10.00, "output": 30.00},
+        LLMModel.CLAUDE_HAIKU: {"input": 0.25, "output": 1.25},
+        LLMModel.CLAUDE_SONNET: {"input": 3.00, "output": 15.00},
     }
 
     @classmethod
     def calculate_cost(
         cls,
-        model: GPT5Model,
+        model: LLMModel,
         input_tokens: int,
         output_tokens: int,
         cached_tokens: int = 0,
@@ -126,7 +133,7 @@ class GPT5CostCalculator:
     @classmethod
     def estimate_daily_cost(
         cls,
-        model: GPT5Model,
+        model: LLMModel,
         calls_per_day: int,
         avg_input_tokens: int = 1000,
         avg_output_tokens: int = 200,
@@ -160,14 +167,14 @@ class GPT5CostCalculator:
         return uncached_cost + cached_cost
 
 
-class GPT5DecisionRouter:
-    """Route decisions to appropriate GPT-5 models based on urgency."""
+class LLMDecisionRouter:
+    """Route decisions to appropriate LLM models based on urgency."""
 
-    def __init__(self, config: GPT5Config):
+    def __init__(self, config: LLMConfig):
         """Initialize the decision router.
 
         Args:
-            config: GPT-5 configuration
+            config: LLM configuration
         """
         self.config = config
 
@@ -177,7 +184,7 @@ class GPT5DecisionRouter:
         vwc: float = None,
         ec: float = None,
         confidence_required: float = 0.7,
-    ) -> Tuple[GPT5Model, ReasoningEffort, Verbosity]:
+    ) -> Tuple[LLMModel, ReasoningEffort, Verbosity]:
         """Select appropriate model based on conditions.
 
         Args:
@@ -233,17 +240,17 @@ class GPT5DecisionRouter:
         return False
 
 
-def create_gpt5_prompt(
+def create_llm_prompt(
     context: Dict[str, Any],
-    model: GPT5Model,
+    model: LLMModel,
     reasoning: ReasoningEffort,
     verbosity: Verbosity,
 ) -> str:
-    """Create optimized prompt for GPT-5.
+    """Create optimized prompt for current LLM models.
 
     Args:
         context: Irrigation context data
-        model: GPT-5 model being used
+        model: LLM model being used
         reasoning: Reasoning effort level
         verbosity: Response verbosity level
 
@@ -251,8 +258,8 @@ def create_gpt5_prompt(
         Formatted prompt string
     """
     # Adjust prompt based on model capabilities
-    if model == GPT5Model.NANO:
-        # Simple, direct prompt for nano
+    if model == LLMModel.GPT4O_MINI:
+        # Simple, direct prompt for mini model
         prompt = f"""
 Irrigation Decision (Quick Analysis):
 VWC: {context.get('vwc', 0)}%
@@ -262,8 +269,8 @@ Phase: {context.get('phase', 'Unknown')}
 Should irrigate? Reply: YES/NO, duration (seconds), confidence (0-1)
 """
 
-    elif model == GPT5Model.MINI:
-        # More detailed prompt for mini
+    elif model in [LLMModel.CLAUDE_HAIKU, LLMModel.GPT4O]:
+        # More detailed prompt for mid-tier models
         prompt = f"""
 Crop Steering Irrigation Analysis:
 
@@ -281,8 +288,8 @@ Provide irrigation decision with reasoning.
 Format: Decision (YES/NO), Duration (seconds), Reasoning (1-2 sentences), Confidence (0-1)
 """
 
-    else:  # GPT5Model.STANDARD
-        # Comprehensive prompt for standard
+    else:  # Premium models (GPT4_TURBO, CLAUDE_SONNET)
+        # Comprehensive prompt for premium models
         prompt = f"""
 Expert Crop Steering Irrigation Analysis
 
@@ -307,10 +314,10 @@ Consider plant physiology, environmental conditions, and optimization goals.
 
 
 # Example usage configuration
-DEFAULT_GPT5_CONFIG = GPT5Config(
-    default_model=GPT5Model.NANO,
-    enhanced_model=GPT5Model.MINI,
-    emergency_model=GPT5Model.STANDARD,
+DEFAULT_LLM_CONFIG = LLMConfig(
+    default_model=LLMModel.GPT4O_MINI,  # Best value for routine decisions
+    enhanced_model=LLMModel.CLAUDE_HAIKU,  # Fast and capable
+    emergency_model=LLMModel.GPT4O,  # High quality when needed
     max_input_tokens=8000,
     enable_caching=True,
     cache_ttl_minutes=1440,  # 24 hours
