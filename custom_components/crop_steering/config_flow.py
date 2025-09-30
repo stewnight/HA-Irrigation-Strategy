@@ -1,4 +1,5 @@
 """Config flow for Crop Steering System integration."""
+
 from __future__ import annotations
 
 import logging
@@ -29,7 +30,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Crop Steering System."""
 
     VERSION = 1
-    
+
     def __init__(self):
         """Initialize config flow."""
         self._data = {}
@@ -48,13 +49,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             # Store user input
             self._data.update(user_input)
-            
+
             # Check if there's an existing entry
             await self.async_set_unique_id(DOMAIN)
             self._abort_if_unique_id_configured()
 
             # Check for YAML configuration first
-            config_path = os.path.join(self.hass.config.config_dir, "crop_steering.yaml")
+            config_path = os.path.join(
+                self.hass.config.config_dir, "crop_steering.yaml"
+            )
             if os.path.exists(config_path):
                 return await self.async_step_load_yaml()
             else:
@@ -65,7 +68,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
         )
 
-    async def async_step_load_yaml(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_load_yaml(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Load configuration from crop_steering.yaml."""
         config_path = os.path.join(self.hass.config.config_dir, "crop_steering.yaml")
 
@@ -85,33 +90,55 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Extract and validate entities
         entities_to_validate = []
         if hardware := config.get("irrigation_hardware"):
-            entities_to_validate.extend([v for k, v in hardware.items() if v and isinstance(v, str) and "." in v])
+            entities_to_validate.extend(
+                [
+                    v
+                    for k, v in hardware.items()
+                    if v and isinstance(v, str) and "." in v
+                ]
+            )
         if env_sensors := config.get("environmental_sensors"):
-            entities_to_validate.extend([v for k, v in env_sensors.items() if v and isinstance(v, str) and "." in v])
-        
+            entities_to_validate.extend(
+                [
+                    v
+                    for k, v in env_sensors.items()
+                    if v and isinstance(v, str) and "." in v
+                ]
+            )
+
         zones_config = {}
         for zone in config.get("zones", []):
             zone_id = zone.get("zone_id")
             if not zone_id:
                 continue
-            
+
             zones_config[zone_id] = {
                 "zone_number": zone_id,
                 "zone_switch": zone.get("switch"),
             }
             entities_to_validate.append(zone.get("switch"))
-            
+
             if sensors := zone.get("sensors"):
-                zones_config[zone_id].update({
-                    "vwc_front": sensors.get("vwc_front"),
-                    "vwc_back": sensors.get("vwc_back"),
-                    "ec_front": sensors.get("ec_front"),
-                    "ec_back": sensors.get("ec_back"),
-                })
-                entities_to_validate.extend([v for k, v in sensors.items() if v and isinstance(v, str) and "." in v])
+                zones_config[zone_id].update(
+                    {
+                        "vwc_front": sensors.get("vwc_front"),
+                        "vwc_back": sensors.get("vwc_back"),
+                        "ec_front": sensors.get("ec_front"),
+                        "ec_back": sensors.get("ec_back"),
+                    }
+                )
+                entities_to_validate.extend(
+                    [
+                        v
+                        for k, v in sensors.items()
+                        if v and isinstance(v, str) and "." in v
+                    ]
+                )
 
         missing_entities = [
-            entity for entity in entities_to_validate if entity and not self.hass.states.get(entity)
+            entity
+            for entity in entities_to_validate
+            if entity and not self.hass.states.get(entity)
         ]
 
         if missing_entities:
@@ -121,27 +148,32 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         # Build data for config entry
-        hardware_config = {**config.get("irrigation_hardware", {}), **config.get("environmental_sensors", {})}
-        
+        hardware_config = {
+            **config.get("irrigation_hardware", {}),
+            **config.get("environmental_sensors", {}),
+        }
+
         data = {
             "installation_mode": "yaml",
             "name": self._data.get("name", "Crop Steering System"),
             CONF_NUM_ZONES: len(zones_config),
             "zones": zones_config,
             "hardware": hardware_config,
-            "config_yaml": config, # Store the full crop_steering.yaml config
+            "config_yaml": config,  # Store the full crop_steering.yaml config
         }
-        
+
         return self.async_create_entry(
             title=data["name"],
             data=data,
         )
 
-    async def async_step_zones(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_zones(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Configure zones manually."""
         # For now, create a basic configuration without detailed zone setup
         # This can be expanded in the future for manual configuration
-        
+
         data = {
             "installation_mode": "manual",
             "name": self._data.get("name", "Crop Steering System"),
@@ -149,7 +181,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "zones": {},
             "hardware": {},
         }
-        
+
         return self.async_create_entry(
             title=data["name"],
             data=data,

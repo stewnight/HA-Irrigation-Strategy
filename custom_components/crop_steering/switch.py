@@ -1,4 +1,5 @@
 """Crop Steering System switches."""
+
 from __future__ import annotations
 
 import logging
@@ -43,7 +44,7 @@ BASE_SWITCH_DESCRIPTIONS = [
 def create_zone_switch_descriptions(num_zones: int) -> list[SwitchEntityDescription]:
     """Create switch descriptions for configured zones."""
     zone_switches = []
-    
+
     for zone_num in range(1, num_zones + 1):
         zone_switches.append(
             SwitchEntityDescription(
@@ -52,7 +53,7 @@ def create_zone_switch_descriptions(num_zones: int) -> list[SwitchEntityDescript
                 icon="mdi:water-pump",
             )
         )
-        
+
         # Add per-zone manual override switch
         zone_switches.append(
             SwitchEntityDescription(
@@ -61,8 +62,9 @@ def create_zone_switch_descriptions(num_zones: int) -> list[SwitchEntityDescript
                 icon="mdi:hand-water",
             )
         )
-    
+
     return zone_switches
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -71,21 +73,22 @@ async def async_setup_entry(
 ) -> None:
     """Set up Crop Steering switches."""
     switches = []
-    
+
     # Get number of zones from config
     config_data = hass.data[DOMAIN][entry.entry_id]
     num_zones = config_data.get(CONF_NUM_ZONES, 1)
-    
+
     # Add base switches
     for description in BASE_SWITCH_DESCRIPTIONS:
         switches.append(CropSteeringSwitch(entry, description))
-    
+
     # Add zone-specific switches
     zone_switches = create_zone_switch_descriptions(num_zones)
     for description in zone_switches:
         switches.append(CropSteeringSwitch(entry, description))
-    
+
     async_add_entities(switches)
+
 
 class CropSteeringSwitch(SwitchEntity, RestoreEntity):
     """Crop Steering switch with state restoration."""
@@ -102,7 +105,7 @@ class CropSteeringSwitch(SwitchEntity, RestoreEntity):
         self._attr_name = description.name
         # Set object_id to include crop_steering prefix for entity_id generation
         self._attr_object_id = f"{DOMAIN}_{description.key}"
-        
+
         # Set default states based on switch type
         if description.key == "system_enabled":
             self._attr_is_on = True  # System enabled by default
@@ -125,7 +128,7 @@ class CropSteeringSwitch(SwitchEntity, RestoreEntity):
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
             name="Crop Steering System",
-            manufacturer="Home Assistant Community", 
+            manufacturer="Home Assistant Community",
             model="Professional Irrigation Controller",
             sw_version=SOFTWARE_VERSION,
         )

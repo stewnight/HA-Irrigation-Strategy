@@ -3,20 +3,22 @@
 Provides specialized prompts for irrigation decision making, troubleshooting,
 optimization, and system analysis with templating and context injection.
 """
+
 from __future__ import annotations
 
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class PromptType(Enum):
     """Types of prompts for different operations."""
+
     IRRIGATION_DECISION = "irrigation_decision"
     PHASE_TRANSITION = "phase_transition"
     TROUBLESHOOTING = "troubleshooting"
@@ -28,15 +30,17 @@ class PromptType(Enum):
 
 class PromptComplexity(Enum):
     """Complexity levels for cost optimization."""
-    SIMPLE = "simple"       # Basic decisions, low token usage
-    STANDARD = "standard"   # Normal complexity
-    DETAILED = "detailed"   # Comprehensive analysis
-    EXPERT = "expert"       # Full expert-level analysis
+
+    SIMPLE = "simple"  # Basic decisions, low token usage
+    STANDARD = "standard"  # Normal complexity
+    DETAILED = "detailed"  # Comprehensive analysis
+    EXPERT = "expert"  # Full expert-level analysis
 
 
 @dataclass
 class PromptContext:
     """Context data for prompt generation."""
+
     zone_id: int
     current_phase: str
     sensor_data: Dict[str, Any]
@@ -50,69 +54,69 @@ class PromptContext:
 
 class PromptManager:
     """Manages prompt templates and context injection for LLM operations."""
-    
+
     def __init__(self):
         """Initialize prompt manager with templates."""
         self._templates = self._load_prompt_templates()
         self._context_processors = self._setup_context_processors()
-    
+
     def _load_prompt_templates(self) -> Dict[str, Dict]:
         """Load all prompt templates."""
         return {
             PromptType.IRRIGATION_DECISION.value: {
                 PromptComplexity.SIMPLE.value: {
                     "system": self._get_irrigation_system_prompt(),
-                    "user": self._get_simple_irrigation_prompt()
+                    "user": self._get_simple_irrigation_prompt(),
                 },
                 PromptComplexity.STANDARD.value: {
                     "system": self._get_irrigation_system_prompt(),
-                    "user": self._get_standard_irrigation_prompt()
+                    "user": self._get_standard_irrigation_prompt(),
                 },
                 PromptComplexity.DETAILED.value: {
                     "system": self._get_irrigation_system_prompt(),
-                    "user": self._get_detailed_irrigation_prompt()
+                    "user": self._get_detailed_irrigation_prompt(),
                 },
                 PromptComplexity.EXPERT.value: {
                     "system": self._get_irrigation_system_prompt(),
-                    "user": self._get_expert_irrigation_prompt()
-                }
+                    "user": self._get_expert_irrigation_prompt(),
+                },
             },
             PromptType.PHASE_TRANSITION.value: {
                 PromptComplexity.STANDARD.value: {
                     "system": self._get_phase_system_prompt(),
-                    "user": self._get_phase_transition_prompt()
+                    "user": self._get_phase_transition_prompt(),
                 }
             },
             PromptType.TROUBLESHOOTING.value: {
                 PromptComplexity.STANDARD.value: {
                     "system": self._get_troubleshooting_system_prompt(),
-                    "user": self._get_troubleshooting_prompt()
+                    "user": self._get_troubleshooting_prompt(),
                 },
                 PromptComplexity.DETAILED.value: {
                     "system": self._get_troubleshooting_system_prompt(),
-                    "user": self._get_detailed_troubleshooting_prompt()
-                }
+                    "user": self._get_detailed_troubleshooting_prompt(),
+                },
             },
             PromptType.OPTIMIZATION.value: {
                 PromptComplexity.STANDARD.value: {
                     "system": self._get_optimization_system_prompt(),
-                    "user": self._get_optimization_prompt()
+                    "user": self._get_optimization_prompt(),
                 }
             },
             PromptType.EMERGENCY_ANALYSIS.value: {
                 PromptComplexity.SIMPLE.value: {
                     "system": self._get_emergency_system_prompt(),
-                    "user": self._get_emergency_analysis_prompt()
+                    "user": self._get_emergency_analysis_prompt(),
                 }
             },
             PromptType.SENSOR_VALIDATION.value: {
                 PromptComplexity.SIMPLE.value: {
                     "system": self._get_sensor_system_prompt(),
-                    "user": self._get_sensor_validation_prompt()
+                    "user": self._get_sensor_validation_prompt(),
                 }
-            }
+            },
         }
-    
+
     def _get_irrigation_system_prompt(self) -> str:
         """Core system prompt for irrigation decisions."""
         return """You are an expert precision agriculture AI assistant specializing in crop steering irrigation systems. Your role is to analyze sensor data and make informed irrigation decisions for controlled environment agriculture.
@@ -144,7 +148,7 @@ Provide responses in JSON format with these fields:
 - "parameters": {} (any specific parameter adjustments)
 
 Always provide quantitative reasoning based on the sensor data and thresholds."""
-    
+
     def _get_simple_irrigation_prompt(self) -> str:
         """Simple irrigation decision prompt for basic operations."""
         return """Based on the current sensor data for Zone {zone_id}, should irrigation be triggered?
@@ -172,7 +176,7 @@ DECISION CRITERIA:
 - Time since last irrigation: {time_since_last}
 
 Provide a clear irrigation recommendation with reasoning."""
-    
+
     def _get_standard_irrigation_prompt(self) -> str:
         """Standard irrigation decision prompt with moderate detail."""
         return """Analyze the irrigation needs for Zone {zone_id} considering current conditions and historical patterns.
@@ -208,7 +212,7 @@ ANALYSIS REQUIRED:
 5. Risk assessment
 
 Provide irrigation recommendation with detailed reasoning and any parameter adjustments needed."""
-    
+
     def _get_detailed_irrigation_prompt(self) -> str:
         """Detailed irrigation prompt for comprehensive analysis."""
         return """Perform comprehensive irrigation analysis for Zone {zone_id} including predictive modeling and optimization recommendations.
@@ -260,7 +264,7 @@ COMPREHENSIVE ANALYSIS REQUIRED:
 10. System performance evaluation
 
 Provide detailed irrigation strategy with predictive insights and optimization recommendations."""
-    
+
     def _get_expert_irrigation_prompt(self) -> str:
         """Expert-level prompt for advanced analysis and research scenarios."""
         return """Conduct expert-level precision agriculture analysis for Zone {zone_id} with research-grade insights and advanced optimization strategies.
@@ -329,7 +333,7 @@ Provide university research-level analysis with:
 - Experimental design suggestions for continuous improvement
 
 This analysis should demonstrate mastery of plant physiology, precision agriculture engineering, and data science methodologies."""
-    
+
     def _get_phase_system_prompt(self) -> str:
         """System prompt for phase transition decisions."""
         return """You are a crop steering phase management specialist. Your role is to determine optimal timing for phase transitions in the 4-phase irrigation cycle (P0-P3) based on plant physiological indicators and environmental conditions.
@@ -348,7 +352,7 @@ CRITICAL CONSIDERATIONS:
 - Growth stage requirements
 
 Provide phase transition recommendations in JSON format with clear reasoning and timing guidance."""
-    
+
     def _get_phase_transition_prompt(self) -> str:
         """Prompt for phase transition analysis."""
         return """Analyze phase transition requirements for Zone {zone_id}.
@@ -379,7 +383,7 @@ ANALYSIS REQUIRED:
 5. Optimization opportunities
 
 Determine if phase transition should occur and provide detailed transition strategy."""
-    
+
     def _get_troubleshooting_system_prompt(self) -> str:
         """System prompt for troubleshooting analysis."""
         return """You are a precision agriculture troubleshooting specialist. Analyze system anomalies, sensor irregularities, and performance issues to provide diagnostic insights and corrective actions.
@@ -392,7 +396,7 @@ DIAGNOSTIC CAPABILITIES:
 - System optimization recommendations
 
 Focus on identifying root causes and providing actionable solutions while maintaining plant health and system reliability."""
-    
+
     def _get_troubleshooting_prompt(self) -> str:
         """Standard troubleshooting prompt."""
         return """Diagnose potential issues with Zone {zone_id} irrigation system.
@@ -423,7 +427,7 @@ DIAGNOSTIC ANALYSIS REQUIRED:
 6. Data quality assessment
 
 Provide comprehensive diagnostic report with prioritized corrective actions."""
-    
+
     def _get_detailed_troubleshooting_prompt(self) -> str:
         """Detailed troubleshooting with comprehensive analysis."""
         return """Perform comprehensive system diagnostic for Zone {zone_id} with advanced troubleshooting protocols.
@@ -461,7 +465,7 @@ ADVANCED DIAGNOSTIC REQUIREMENTS:
 10. Quality assurance and validation protocols
 
 Provide expert-level diagnostic report with quantitative analysis and prioritized action plan."""
-    
+
     def _get_optimization_system_prompt(self) -> str:
         """System prompt for optimization analysis."""
         return """You are a precision agriculture optimization specialist focused on improving irrigation efficiency, resource utilization, and crop outcomes through data-driven insights and advanced analytics.
@@ -475,7 +479,7 @@ OPTIMIZATION DOMAINS:
 - Operational cost reduction
 
 Provide actionable optimization strategies with quantitative benefits and implementation guidance."""
-    
+
     def _get_optimization_prompt(self) -> str:
         """Optimization analysis prompt."""
         return """Analyze optimization opportunities for Zone {zone_id} irrigation system.
@@ -506,7 +510,7 @@ ANALYSIS REQUIREMENTS:
 6. Automation opportunities
 
 Provide comprehensive optimization strategy with quantified benefits and implementation roadmap."""
-    
+
     def _get_emergency_system_prompt(self) -> str:
         """System prompt for emergency analysis."""
         return """You are an emergency response specialist for precision agriculture systems. Rapidly assess critical situations and provide immediate protective actions to prevent crop loss or system damage.
@@ -519,7 +523,7 @@ EMERGENCY PROTOCOLS:
 - Escalation criteria
 
 Focus on immediate actions to protect crops and systems while providing clear escalation guidance."""
-    
+
     def _get_emergency_analysis_prompt(self) -> str:
         """Emergency analysis prompt."""
         return """EMERGENCY ANALYSIS REQUIRED for Zone {zone_id}
@@ -545,7 +549,7 @@ EMERGENCY RESPONSE REQUIRED:
 5. Escalation recommendations
 
 Provide emergency response plan with immediate actions and monitoring requirements."""
-    
+
     def _get_sensor_system_prompt(self) -> str:
         """System prompt for sensor validation."""
         return """You are a sensor validation specialist focused on ensuring data quality and measurement accuracy in precision agriculture systems.
@@ -558,7 +562,7 @@ VALIDATION CAPABILITIES:
 - Outlier identification
 
 Provide actionable sensor maintenance and calibration recommendations."""
-    
+
     def _get_sensor_validation_prompt(self) -> str:
         """Sensor validation prompt."""
         return """Validate sensor performance for Zone {zone_id}.
@@ -583,7 +587,7 @@ VALIDATION REQUIREMENTS:
 5. Calibration recommendations
 
 Provide sensor validation report with maintenance recommendations."""
-    
+
     def _setup_context_processors(self) -> Dict:
         """Set up context processors for different data types."""
         return {
@@ -591,39 +595,39 @@ Provide sensor validation report with maintenance recommendations."""
             "historical_data": self._process_historical_context,
             "environmental_data": self._process_environmental_context,
             "system_config": self._process_config_context,
-            "events": self._process_events_context
+            "events": self._process_events_context,
         }
-    
+
     def generate_prompt(
         self,
         prompt_type: PromptType,
         context: PromptContext,
         complexity: PromptComplexity = PromptComplexity.STANDARD,
-        custom_params: Optional[Dict] = None
+        custom_params: Optional[Dict] = None,
     ) -> Dict[str, str]:
         """Generate a complete prompt with system and user messages."""
         try:
             # Get template for prompt type and complexity
             if prompt_type.value not in self._templates:
                 raise ValueError(f"Unknown prompt type: {prompt_type}")
-            
+
             prompt_templates = self._templates[prompt_type.value]
-            
+
             if complexity.value not in prompt_templates:
                 # Fall back to standard complexity if requested complexity not available
                 complexity = PromptComplexity.STANDARD
                 if complexity.value not in prompt_templates:
                     raise ValueError(f"No templates available for {prompt_type}")
-            
+
             template = prompt_templates[complexity.value]
-            
+
             # Process context data
             context_vars = self._process_context(context, custom_params or {})
-            
+
             # Format templates with context
             system_prompt = template["system"].format(**context_vars)
             user_prompt = template["user"].format(**context_vars)
-            
+
             return {
                 "system": system_prompt,
                 "user": user_prompt,
@@ -631,110 +635,140 @@ Provide sensor validation report with maintenance recommendations."""
                     "prompt_type": prompt_type.value,
                     "complexity": complexity.value,
                     "zone_id": context.zone_id,
-                    "timestamp": context.timestamp.isoformat() if context.timestamp else datetime.now().isoformat()
-                }
+                    "timestamp": (
+                        context.timestamp.isoformat()
+                        if context.timestamp
+                        else datetime.now().isoformat()
+                    ),
+                },
             }
-            
+
         except Exception as e:
             _LOGGER.error("Error generating prompt: %s", e)
             # Return fallback prompt
             return {
                 "system": "You are a precision agriculture assistant. Analyze the provided data and give recommendations.",
                 "user": f"Analyze irrigation needs for Zone {context.zone_id} with current phase {context.current_phase}.",
-                "metadata": {"error": str(e)}
+                "metadata": {"error": str(e)},
             }
-    
-    def _process_context(self, context: PromptContext, custom_params: Dict) -> Dict[str, Any]:
+
+    def _process_context(
+        self, context: PromptContext, custom_params: Dict
+    ) -> Dict[str, Any]:
         """Process context data into template variables."""
         # Start with custom parameters
         vars_dict = custom_params.copy()
-        
+
         # Add basic context
-        vars_dict.update({
-            "zone_id": context.zone_id,
-            "current_phase": context.current_phase,
-            "timestamp": context.timestamp.isoformat() if context.timestamp else datetime.now().isoformat(),
-            "growth_stage": context.growth_stage or "unknown"
-        })
-        
+        vars_dict.update(
+            {
+                "zone_id": context.zone_id,
+                "current_phase": context.current_phase,
+                "timestamp": (
+                    context.timestamp.isoformat()
+                    if context.timestamp
+                    else datetime.now().isoformat()
+                ),
+                "growth_stage": context.growth_stage or "unknown",
+            }
+        )
+
         # Process sensor data
         if context.sensor_data:
             vars_dict.update(self._process_sensor_context(context.sensor_data))
-        
+
         # Process historical data
         if context.historical_data:
             vars_dict.update(self._process_historical_context(context.historical_data))
-        
+
         # Process system configuration
         if context.system_config:
             vars_dict.update(self._process_config_context(context.system_config))
-        
+
         # Process recent events
         if context.recent_events:
             vars_dict.update(self._process_events_context(context.recent_events))
-        
+
         # Process weather data
         if context.weather_data:
             vars_dict.update(self._process_environmental_context(context.weather_data))
-        
+
         # Ensure all template variables have default values
         self._apply_defaults(vars_dict)
-        
+
         return vars_dict
-    
+
     def _process_sensor_context(self, sensor_data: Dict[str, Any]) -> Dict[str, Any]:
         """Process sensor data into template variables."""
         processed = {}
-        
+
         # VWC processing
         vwc_front = sensor_data.get("vwc_front", 0)
         vwc_back = sensor_data.get("vwc_back", 0)
-        processed.update({
-            "vwc_front": round(vwc_front, 1),
-            "vwc_back": round(vwc_back, 1),
-            "vwc_avg": round((vwc_front + vwc_back) / 2, 1),
-            "vwc_std": round(abs(vwc_front - vwc_back) / 2, 1)
-        })
-        
+        processed.update(
+            {
+                "vwc_front": round(vwc_front, 1),
+                "vwc_back": round(vwc_back, 1),
+                "vwc_avg": round((vwc_front + vwc_back) / 2, 1),
+                "vwc_std": round(abs(vwc_front - vwc_back) / 2, 1),
+            }
+        )
+
         # EC processing
         ec_front = sensor_data.get("ec_front", 0)
         ec_back = sensor_data.get("ec_back", 0)
-        processed.update({
-            "ec_front": round(ec_front, 2),
-            "ec_back": round(ec_back, 2),
-            "ec_avg": round((ec_front + ec_back) / 2, 2),
-            "ec_std": round(abs(ec_front - ec_back) / 2, 2)
-        })
-        
+        processed.update(
+            {
+                "ec_front": round(ec_front, 2),
+                "ec_back": round(ec_back, 2),
+                "ec_avg": round((ec_front + ec_back) / 2, 2),
+                "ec_std": round(abs(ec_front - ec_back) / 2, 2),
+            }
+        )
+
         # Environmental sensors
-        processed.update({
-            "temperature": round(sensor_data.get("temperature", 0), 1),
-            "humidity": round(sensor_data.get("humidity", 0), 1),
-            "vpd": round(sensor_data.get("vpd", 0), 2)
-        })
-        
+        processed.update(
+            {
+                "temperature": round(sensor_data.get("temperature", 0), 1),
+                "humidity": round(sensor_data.get("humidity", 0), 1),
+                "vpd": round(sensor_data.get("vpd", 0), 2),
+            }
+        )
+
         return processed
-    
-    def _process_historical_context(self, historical_data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _process_historical_context(
+        self, historical_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Process historical data into template variables."""
         return {
-            "historical_summary": historical_data.get("summary", "No historical data available"),
+            "historical_summary": historical_data.get(
+                "summary", "No historical data available"
+            ),
             "detailed_historical_data": json.dumps(historical_data, indent=2),
             "vwc_trend_24h": historical_data.get("vwc_trend_24h", "stable"),
             "ec_trend_24h": historical_data.get("ec_trend_24h", "stable"),
-            "irrigation_frequency": historical_data.get("irrigation_frequency", "normal"),
-            "dryback_analysis": historical_data.get("dryback_analysis", "normal pattern")
+            "irrigation_frequency": historical_data.get(
+                "irrigation_frequency", "normal"
+            ),
+            "dryback_analysis": historical_data.get(
+                "dryback_analysis", "normal pattern"
+            ),
         }
-    
-    def _process_environmental_context(self, weather_data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _process_environmental_context(
+        self, weather_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Process environmental/weather data."""
         return {
             "weather_forecast": weather_data.get("forecast", "No forecast available"),
-            "light_schedule": weather_data.get("light_schedule", "Standard photoperiod"),
+            "light_schedule": weather_data.get(
+                "light_schedule", "Standard photoperiod"
+            ),
             "climate_conditions": weather_data.get("climate", "Controlled environment"),
-            "environmental_conditions": json.dumps(weather_data, indent=2)
+            "environmental_conditions": json.dumps(weather_data, indent=2),
         }
-    
+
     def _process_config_context(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
         """Process system configuration data."""
         return {
@@ -747,75 +781,88 @@ Provide sensor validation report with maintenance recommendations."""
             "vwc_min": config_data.get("vwc_min", 50),
             "vwc_max": config_data.get("vwc_max", 80),
             "ec_min": config_data.get("ec_min", 1.5),
-            "ec_max": config_data.get("ec_max", 4.0)
+            "ec_max": config_data.get("ec_max", 4.0),
         }
-    
+
     def _process_events_context(self, events_data: List[Dict]) -> Dict[str, Any]:
         """Process recent events data."""
         if not events_data:
-            return {
-                "recent_events": "No recent events",
-                "time_since_last": "unknown"
-            }
-        
+            return {"recent_events": "No recent events", "time_since_last": "unknown"}
+
         # Format recent events
         event_summary = []
         for event in events_data[-5:]:  # Last 5 events
             event_summary.append(
                 f"{event.get('timestamp', 'unknown')}: {event.get('type', 'event')} - {event.get('description', 'no description')}"
             )
-        
+
         return {
             "recent_events": "\\n".join(event_summary),
-            "time_since_last": events_data[-1].get("time_since", "unknown") if events_data else "unknown"
+            "time_since_last": (
+                events_data[-1].get("time_since", "unknown")
+                if events_data
+                else "unknown"
+            ),
         }
-    
+
     def _apply_defaults(self, vars_dict: Dict[str, Any]) -> None:
         """Apply default values for any missing template variables."""
         defaults = {
             # Sensor defaults
-            "vwc_front": 0, "vwc_back": 0, "vwc_avg": 0, "vwc_std": 0,
-            "ec_front": 0, "ec_back": 0, "ec_avg": 0, "ec_std": 0,
-            "temperature": 0, "humidity": 0, "vpd": 0,
-            
+            "vwc_front": 0,
+            "vwc_back": 0,
+            "vwc_avg": 0,
+            "vwc_std": 0,
+            "ec_front": 0,
+            "ec_back": 0,
+            "ec_avg": 0,
+            "ec_std": 0,
+            "temperature": 0,
+            "humidity": 0,
+            "vpd": 0,
             # Configuration defaults
-            "target_vwc": 65, "target_ec": 2.5, "vwc_threshold": 60,
-            "ec_ratio": 1.0, "shot_size_ml": 100, "max_daily_ml": 2000,
-            
+            "target_vwc": 65,
+            "target_ec": 2.5,
+            "vwc_threshold": 60,
+            "ec_ratio": 1.0,
+            "shot_size_ml": 100,
+            "max_daily_ml": 2000,
             # Historical defaults
             "historical_summary": "No historical data available",
-            "vwc_trend_24h": "stable", "ec_trend_24h": "stable",
-            "irrigation_frequency": "normal", "dryback_analysis": "normal",
-            
+            "vwc_trend_24h": "stable",
+            "ec_trend_24h": "stable",
+            "irrigation_frequency": "normal",
+            "dryback_analysis": "normal",
             # Event defaults
             "recent_events": "No recent events",
             "time_since_last": "unknown",
-            
             # Environmental defaults
             "weather_forecast": "No forecast available",
             "light_schedule": "Standard photoperiod",
             "climate_conditions": "Controlled environment",
-            
             # Phase defaults
             "phase_requirements": "Standard phase requirements",
             "time_in_phase": "unknown",
             "days_in_phase": 0,
-            
             # Emergency defaults
-            "alert_type": "unknown", "severity": "medium",
-            "critical_values": "none", "threshold_violations": "none",
-            "plant_risk": "low", "system_risk": "low", "time_sensitivity": "medium"
+            "alert_type": "unknown",
+            "severity": "medium",
+            "critical_values": "none",
+            "threshold_violations": "none",
+            "plant_risk": "low",
+            "system_risk": "low",
+            "time_sensitivity": "medium",
         }
-        
+
         for key, default_value in defaults.items():
             if key not in vars_dict:
                 vars_dict[key] = default_value
-    
+
     def estimate_token_usage(
         self,
         prompt_type: PromptType,
         complexity: PromptComplexity,
-        context_size: str = "medium"
+        context_size: str = "medium",
     ) -> int:
         """Estimate token usage for a prompt type and complexity."""
         # Base token estimates by complexity
@@ -823,17 +870,12 @@ Provide sensor validation report with maintenance recommendations."""
             PromptComplexity.SIMPLE: 500,
             PromptComplexity.STANDARD: 1200,
             PromptComplexity.DETAILED: 2500,
-            PromptComplexity.EXPERT: 4500
+            PromptComplexity.EXPERT: 4500,
         }
-        
+
         # Context size multipliers
-        context_multipliers = {
-            "small": 0.8,
-            "medium": 1.0,
-            "large": 1.5,
-            "xlarge": 2.0
-        }
-        
+        context_multipliers = {"small": 0.8, "medium": 1.0, "large": 1.5, "xlarge": 2.0}
+
         # Prompt type adjustments
         type_adjustments = {
             PromptType.IRRIGATION_DECISION: 1.0,
@@ -841,26 +883,23 @@ Provide sensor validation report with maintenance recommendations."""
             PromptType.TROUBLESHOOTING: 1.3,
             PromptType.OPTIMIZATION: 1.5,
             PromptType.EMERGENCY_ANALYSIS: 0.6,
-            PromptType.SENSOR_VALIDATION: 0.7
+            PromptType.SENSOR_VALIDATION: 0.7,
         }
-        
+
         base = base_tokens.get(complexity, 1200)
         context_mult = context_multipliers.get(context_size, 1.0)
         type_mult = type_adjustments.get(prompt_type, 1.0)
-        
+
         return int(base * context_mult * type_mult)
-    
+
     def get_recommended_complexity(
-        self,
-        operation_type: str,
-        budget_tier: str,
-        urgency: str = "medium"
+        self, operation_type: str, budget_tier: str, urgency: str = "medium"
     ) -> PromptComplexity:
         """Recommend prompt complexity based on operation parameters."""
         # Emergency situations use simple prompts
         if urgency == "emergency":
             return PromptComplexity.SIMPLE
-        
+
         # Budget-based recommendations
         if budget_tier == "economy":
             return PromptComplexity.SIMPLE
@@ -874,6 +913,6 @@ Provide sensor validation report with maintenance recommendations."""
                 return PromptComplexity.DETAILED
             else:
                 return PromptComplexity.STANDARD
-        
+
         # Default to standard
         return PromptComplexity.STANDARD
