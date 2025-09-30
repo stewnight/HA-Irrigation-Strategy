@@ -1,3 +1,4 @@
+---
 # LLM Integration Configuration Template for Crop Steering System
 # Copy and modify this configuration for your setup
 
@@ -7,51 +8,52 @@
 llm_enhanced_crop_steering:
   module: crop_steering.llm.llm_enhanced_app
   class: LLMEnhancedCropSteering
-  
+
   # Basic Configuration
   zones: [1, 2, 3]  # Your active zones
   enable_llm: true  # Set to false to disable LLM features
-  
+
   # LLM Provider Configuration
   llm_config:
     provider: "claude"  # "claude" or "openai"
-    model: "claude-3-5-sonnet-20241022"  # Claude: claude-3-5-sonnet-20241022, claude-3-haiku-20240307
-                                         # OpenAI: gpt-4, gpt-4-turbo, gpt-3.5-turbo
-    api_key: "your-api-key-here"  # Your API key (use secrets.yaml recommended)
+    # Claude: claude-3-5-sonnet-20241022, claude-3-haiku-20240307
+    # OpenAI: gpt-4, gpt-4-turbo, gpt-3.5-turbo
+    model: "claude-3-5-sonnet-20241022"
+    api_key: "your-api-key-here"  # Use secrets.yaml recommended
     timeout: 30
     max_retries: 3
-    
+
   # Alternative: Use secrets file (recommended)
   # llm_config:
   #   provider: "claude"
   #   model: "claude-3-5-sonnet-20241022"
   #   api_key: !secret claude_api_key
-  
+
   # Budget Control Configuration
   budget_config:
     daily_limit: 5.0      # $5.00 daily limit
-    weekly_limit: 25.0    # $25.00 weekly limit  
+    weekly_limit: 25.0    # $25.00 weekly limit
     monthly_limit: 100.0  # $100.00 monthly limit
     emergency_reserve: 10.0  # $10.00 emergency reserve
     cost_tier: "standard"    # "economy", "standard", "premium", "emergency"
     enable_alerts: true
-    
+
     # Alert thresholds (percentage of budget)
     alert_thresholds:
       daily_warning: 0.7     # 70% of daily budget
-      daily_critical: 0.9    # 90% of daily budget  
+      daily_critical: 0.9    # 90% of daily budget
       weekly_warning: 0.8    # 80% of weekly budget
       monthly_warning: 0.8   # 80% of monthly budget
-  
+
   # Decision Engine Configuration
   llm_confidence_threshold: 70.0  # Minimum confidence to trust LLM decision
   enable_llm_phase_transitions: true  # Allow LLM to suggest phase changes
-  
+
   # Safety Configuration
   safety_thresholds:
     min_confidence: 70.0      # Minimum LLM confidence
     max_vwc_critical: 80.0    # Critical high VWC level
-    min_vwc_critical: 40.0    # Critical low VWC level  
+    min_vwc_critical: 40.0    # Critical low VWC level
     max_ec_critical: 5.0      # Critical EC level
     emergency_response_time: 300  # 5 minutes for emergency response
 
@@ -61,7 +63,7 @@ llm_enhanced_crop_steering:
 # Add this to your Home Assistant configuration.yaml:
 
 # Crop Steering System (if not already configured)
-# The LLM components will be automatically available once the integration is installed
+# The LLM components will be automatically available once integration installed
 
 # Optional: Create input helpers for manual LLM control
 input_boolean:
@@ -75,7 +77,7 @@ input_select:
     name: "LLM Cost Tier"
     options:
       - economy
-      - standard  
+      - standard
       - premium
     initial: standard
     icon: mdi:currency-usd
@@ -98,7 +100,7 @@ input_number:
 # Claude API Key (get from https://console.anthropic.com/)
 claude_api_key: "sk-ant-api03-..."
 
-# OpenAI API Key (get from https://platform.openai.com/api-keys)  
+# OpenAI API Key (get from https://platform.openai.com/api-keys)
 openai_api_key: "sk-..."
 
 ---
@@ -138,7 +140,7 @@ openai_api_key: "sk-..."
 # CLAUDE MODELS:
 # - claude-3-5-sonnet-20241022: Best balance of performance and cost
 # - claude-3-haiku-20240307: Fastest and cheapest, good for simple decisions
-# - claude-3-opus-20240229: Most capable but expensive (not recommended for irrigation)
+# - claude-3-opus-20240229: Most capable but expensive (not recommended)
 
 # OPENAI MODELS:
 # - gpt-4-turbo: Good performance, reasonable cost
